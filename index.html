@@ -446,7 +446,7 @@ async function doLogin() {
       errEl.style.display='block'; return;
     }
     currentUser = rows[0];
-    sessionStorage.setItem('codek_uid', currentUser.id);
+    localStorage.setItem('codek_uid', currentUser.id);
     await initApp();
   } catch(e) {
     errEl.textContent='Error de conexión. Intenta de nuevo.'; errEl.style.display='block';
@@ -475,7 +475,7 @@ async function loadSessions() {
 
 async function doLogout() {
   currentUser=null; activeCiclo=null; sessions=[];
-  sessionStorage.removeItem('codek_uid');
+  localStorage.removeItem('codek_uid');
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('inp-user').value='';
@@ -1000,7 +1000,7 @@ function showToast(msg){
 
 // AUTO-LOGIN
 (async()=>{
-  const uid=sessionStorage.getItem('codek_uid');
+  const uid=localStorage.getItem('codek_uid');
   if(!uid) return;
   try {
     const rows=await sbGet('clientes',`id=eq.${uid}&activo=eq.true&select=*`);
