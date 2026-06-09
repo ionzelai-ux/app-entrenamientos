@@ -570,6 +570,8 @@ function openNewSession() {
   });
   document.getElementById('sess-date').value=todayISO();
   renderSessionForm();
+  const hasDraft = loadDraft();
+  if(hasDraft){ showToast('\uD83D\uDCDD Borrador recuperado'); }
   openModal('modal-session');
 }
 
@@ -595,9 +597,9 @@ function renderSessionForm() {
       setsHtml+=`<div class="set-row">
         <div class="set-label">S${s+1}</div>
         <div><label class="form-label" style="font-size:10px">Reps</label>
-          <input type="number" class="form-input" id="reps_${eIdx}_${s}" placeholder="${ex.repMin}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px"></div>
+          <input type="number" class="form-input" id="reps_${eIdx}_${s}" placeholder="${ex.repMin}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
         <div><label class="form-label" style="font-size:10px">Kg</label>
-          <input type="number" class="form-input" id="kg_${eIdx}_${s}" placeholder="0" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" value="${lastKg}"></div>
+          <input type="number" class="form-input" id="kg_${eIdx}_${s}" placeholder="0" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="saveDraft()" value="${lastKg}"></div>
       </div>`;
     }
     const block=document.createElement('div'); block.className='sess-ex-block';
@@ -619,6 +621,65 @@ function renderSessionForm() {
 function setSens(eIdx,val,btn){
   document.querySelectorAll(`#sens_${eIdx} .sens-btn`).forEach(b=>{b.className='sens-btn';delete b.dataset.sel;});
   btn.className='sens-btn sel-'+val; btn.dataset.sel=val;
+  saveDraft();
+}
+
+// ── DRAFT AUTOSAVE ──
+function getDraftKey(){ return 'codek_draft_'+(currentUser?.id||''); }
+
+function saveDraft(){
+  const selEl = document.getElementById('sel-dia');
+  const fecha = document.getElementById('sess-date')?.value;
+  if(!selEl || !fecha) return;
+  const diaIdx = selEl.value;
+  const dia = (activeCiclo?.programa||[])[parseInt(diaIdx)];
+  if(!dia) return;
+  const entries = [];
+  dia.ejercicios.forEach((ex,eIdx)=>{
+    const series=[];
+    for(let s=0;s<ex.series;s++){
+      const reps = document.getElementById('reps_'+eIdx+'_'+s)?.value || '';
+      const kg   = document.getElementById('kg_'+eIdx+'_'+s)?.value || '';
+      series.push({reps,kg});
+    }
+    const sensBtn = document.querySelector('#sens_'+eIdx+' [data-sel]');
+    entries.push({ejercicio:ex.nombre, series, sensacion:sensBtn?.dataset.sel||null});
+  });
+  localStorage.setItem(getDraftKey(), JSON.stringify({diaIdx,fecha,entries}));
+}
+
+function loadDraft(){
+  const raw = localStorage.getItem(getDraftKey());
+  if(!raw) return false;
+  try {
+    const draft = JSON.parse(raw);
+    const dia = (activeCiclo?.programa||[])[parseInt(draft.diaIdx)];
+    if(!dia) return false;
+    const sel = document.getElementById('sel-dia');
+    if(sel) sel.value = draft.diaIdx;
+    document.getElementById('sess-date').value = draft.fecha;
+    renderSessionForm();
+    draft.entries.forEach((entry,eIdx)=>{
+      (entry.series||[]).forEach((s,sIdx)=>{
+        const rEl = document.getElementById('reps_'+eIdx+'_'+sIdx);
+        const kEl = document.getElementById('kg_'+eIdx+'_'+sIdx);
+        if(rEl && s.reps !== '') rEl.value = s.reps;
+        if(kEl && s.kg !== '')   kEl.value = s.kg;
+      });
+      if(entry.sensacion){
+        const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
+        btns.forEach(btn => {
+          if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+entry.sensacion+"'"))
+            setSens(eIdx, entry.sensacion, btn);
+        });
+      }
+    });
+    return true;
+  } catch(e){ localStorage.removeItem(getDraftKey()); return false; }
+}
+
+function clearDraft(){
+  localStorage.removeItem(getDraftKey());
 }
 
 async function saveSession(){
