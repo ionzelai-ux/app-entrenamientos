@@ -569,14 +569,40 @@ function openNewSession() {
     sel.appendChild(opt);
   });
   document.getElementById('sess-date').value=todayISO();
-  renderSessionForm();
-  const hasDraft = loadDraft();
-  if(hasDraft){ showToast('\uD83D\uDCDD Borrador recuperado'); }
+  // Check if there's a draft BEFORE rendering, so we can restore the right day
+  const raw = localStorage.getItem(getDraftKey());
+  if(raw){
+    try {
+      const draft = JSON.parse(raw);
+      sel.value = draft.diaIdx;
+      document.getElementById('sess-date').value = draft.fecha;
+      renderSessionForm();
+      draft.entries.forEach((entry,eIdx)=>{
+        (entry.series||[]).forEach((s,sIdx)=>{
+          const rEl = document.getElementById('reps_'+eIdx+'_'+sIdx);
+          const kEl = document.getElementById('kg_'+eIdx+'_'+sIdx);
+          if(rEl && s.reps !== '') rEl.value = s.reps;
+          if(kEl && s.kg !== '')   kEl.value = s.kg;
+        });
+        if(entry.sensacion){
+          const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
+          btns.forEach(btn => {
+            if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+entry.sensacion+"'"))
+              setSens(eIdx, entry.sensacion, btn);
+          });
+        }
+      });
+      showToast('📝 Borrador recuperado');
+    } catch(e){ localStorage.removeItem(getDraftKey()); renderSessionForm(); }
+  } else {
+    renderSessionForm();
+  }
   openModal('modal-session');
 }
 
 function renderSessionForm() {
   const diaIdx=parseInt(document.getElementById('sel-dia').value);
+  activeDia = diaIdx; // keep activeDia in sync
   const dia=(activeCiclo?.programa||[])[diaIdx];
   if(!dia) return;
   const body=document.getElementById('session-form-body');
@@ -648,35 +674,7 @@ function saveDraft(){
   localStorage.setItem(getDraftKey(), JSON.stringify({diaIdx,fecha,entries}));
 }
 
-function loadDraft(){
-  const raw = localStorage.getItem(getDraftKey());
-  if(!raw) return false;
-  try {
-    const draft = JSON.parse(raw);
-    const dia = (activeCiclo?.programa||[])[parseInt(draft.diaIdx)];
-    if(!dia) return false;
-    const sel = document.getElementById('sel-dia');
-    if(sel) sel.value = draft.diaIdx;
-    document.getElementById('sess-date').value = draft.fecha;
-    renderSessionForm();
-    draft.entries.forEach((entry,eIdx)=>{
-      (entry.series||[]).forEach((s,sIdx)=>{
-        const rEl = document.getElementById('reps_'+eIdx+'_'+sIdx);
-        const kEl = document.getElementById('kg_'+eIdx+'_'+sIdx);
-        if(rEl && s.reps !== '') rEl.value = s.reps;
-        if(kEl && s.kg !== '')   kEl.value = s.kg;
-      });
-      if(entry.sensacion){
-        const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
-        btns.forEach(btn => {
-          if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+entry.sensacion+"'"))
-            setSens(eIdx, entry.sensacion, btn);
-        });
-      }
-    });
-    return true;
-  } catch(e){ localStorage.removeItem(getDraftKey()); return false; }
-}
+function loadDraft(){ /* inlined in openNewSession */ }
 
 function clearDraft(){
   localStorage.removeItem(getDraftKey());
