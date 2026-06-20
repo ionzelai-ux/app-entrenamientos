@@ -907,7 +907,7 @@ function viewSession(sessId){
       <div style="font-weight:700;font-size:14px;margin-bottom:4px">${e.ejercicio}</div>
       <div style="font-size:13px;color:var(--gt)">${sText}</div>
       ${feel?`<span class="feel-badge feel-${e.sensacion}">${feel}</span>`:''}
-      ${e.nota?`<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 ${e.nota}</div>`:''}
+      "+(e.nota?'<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>':'')+"
     </div>`;
   });
   document.getElementById('view-sess-body').innerHTML=html;
@@ -975,7 +975,7 @@ function renderProg(){
         <div>
           <div class="prog-name">${exName}</div>
           <div class="prog-sessions">${entries.length} sesión${entries.length!==1?'es':''} ${ds2}</div>
-          ${progEx?`<div style="font-size:11px;color:var(--gt)">${progEx.series}×${progEx.repMin}–${progEx.repMax} reps</div>`:''}
+          "+(progEx?'<div style="font-size:11px;color:var(--gt)">'+progEx.series+'×'+progEx.repMin+'–'+progEx.repMax+' reps</div>':'')+"
         </div>
         <div style="color:var(--gt);font-size:20px">›</div>
       </div>
@@ -1215,68 +1215,69 @@ let evaluaciones = [];
 let activeFundTab = 'dominadas';
 
 async function loadEvaluaciones(){
-  evaluaciones = await sbGet('evaluaciones', `cliente_id=eq.${currentUser.id}&order=fecha.desc&select=*`);
+  evaluaciones = await sbGet('evaluaciones', 'cliente_id=eq.'+currentUser.id+'&order=fecha.desc&select=*');
 }
 
 function renderEval(){
   const last = evaluaciones[0];
   const box = document.getElementById('eval-last-box');
-  
-  if(last){
-    const metrics = [
-      {icon:'⏱',name:'Colgado en barra',val:last.colgado_seg,unit:'seg'},
-      {icon:'🦵',name:'Sentadillas 30s',val:last.sentadillas,unit:'reps'},
-      {icon:'🔁',name:'Remos en anillas 30s',val:last.remos,unit:'reps'},
-      {icon:'💪',name:'Flexiones 30s',val:last.flexiones,unit:'reps'},
-    ];
-    let html = `<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Último test — ${formatDateShort(last.fecha)}</div></div>
-    <div class="eval-card">`;
-    metrics.forEach(m=>{
-      if(m.val===null||m.val===undefined) return;
-      // Find previous for delta
-      const prev = evaluaciones[1];
-      const prevVal = prev ? prev[['colgado_seg','sentadillas','remos','flexiones'][metrics.indexOf(m)]] : null;
-      const delta = prevVal!==null && prevVal!==undefined ? m.val - prevVal : null;
-      const deltaHtml = delta!==null ? `<span style="color:${delta>=0?'var(--green)':'var(--red)';font-size:11px;margin-left:4px">${delta>0?'+':''}${delta}</span>` : '';
-      html+=`<div class="eval-metric">
-        <div class="eval-icon">${m.icon}</div>
-        <div class="eval-info"><div class="eval-name">${m.name}</div><div class="eval-best">${prevVal!==null&&prevVal!==undefined?'Anterior: '+prevVal+' '+m.unit:'Primera evaluación'}</div></div>
-        <div style="text-align:right"><div class="eval-val">${m.val}${deltaHtml}</div><div class="eval-unit">${m.unit}</div></div>
-      </div>`;
-    });
-    if(last.notas) html+=`<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 ${last.notas}</div>`;
-    html+='</div>';
-    box.innerHTML=html;
-  } else {
-    box.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación inicial</p></div>`;
+
+  if(!last){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación inicial</p></div>';
+    document.getElementById('eval-hist-list').innerHTML = '';
+    return;
   }
 
+  const prev = evaluaciones[1] || null;
+  function delta(cur, p) {
+    if(cur===null||cur===undefined) return '';
+    if(!p) return '';
+    var d = cur - p;
+    var col = d >= 0 ? 'var(--green)' : 'var(--red)';
+    return ' <span style="color:'+col+';font-size:11px">'+(d>0?'+':'')+d+'</span>';
+  }
+
+  var html = '<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Último test — '+formatDateShort(last.fecha)+'</div></div>';
+  html += '<div class="eval-card">';
+
+  function metricRow(icon, name, val, prevVal, unit) {
+    if(val===null||val===undefined) return '';
+    var prevTxt = (prevVal!==null&&prevVal!==undefined) ? 'Anterior: '+prevVal+' '+unit : 'Primera evaluación';
+    return '<div class="eval-metric">'
+      + '<div class="eval-icon">'+icon+'</div>'
+      + '<div class="eval-info"><div class="eval-name">'+name+'</div><div class="eval-best">'+prevTxt+'</div></div>'
+      + '<div style="text-align:right"><div class="eval-val">'+val+delta(val,prevVal)+'</div><div class="eval-unit">'+unit+'</div></div>'
+      + '</div>';
+  }
+
+  html += metricRow('⏱','Colgado en barra', last.colgado_seg, prev&&prev.colgado_seg, 'seg');
+  html += metricRow('🦵','Sentadillas 30s',  last.sentadillas,  prev&&prev.sentadillas,  'reps');
+  html += metricRow('🔁','Remos anillas 30s',last.remos,        prev&&prev.remos,        'reps');
+  html += metricRow('💪','Flexiones 30s',    last.flexiones,    prev&&prev.flexiones,    'reps');
+  if(last.notas) html += '<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 '+last.notas+'</div>';
+  html += '</div>';
+  box.innerHTML = html;
+
   // Historial
-  const list = document.getElementById('eval-hist-list');
+  var list = document.getElementById('eval-hist-list');
   if(evaluaciones.length <= 1){ list.innerHTML=''; return; }
-  list.innerHTML='<div class="section-title">Historial</div>';
-  const card = document.createElement('div'); card.className='card';
-  evaluaciones.slice(1).forEach(ev=>{
-    const row = document.createElement('div');
-    row.style.cssText='padding:11px 14px;border-bottom:1px solid var(--gm);cursor:pointer';
-    row.onclick = ()=>viewEval(ev.id);
-    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-weight:700;font-size:14px">${formatDateShort(ev.fecha)}</div>
-        <div style="font-size:12px;color:var(--gt);margin-top:2px">
-          ⏱${ev.colgado_seg??'—'}s · 🦵${ev.sentadillas??'—'} · 🔁${ev.remos??'—'} · 💪${ev.flexiones??'—'}
-        </div>
-      </div>
-      <div style="color:var(--gt)">›</div>
-    </div>`;
-    card.appendChild(row);
+  var hhtml = '<div class="section-title">Historial</div><div class="card">';
+  evaluaciones.slice(1).forEach(function(ev){
+    hhtml += '<div style="padding:11px 14px;border-bottom:1px solid var(--gm);cursor:pointer" onclick="viewEval('+ev.id+')">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div><div style="font-weight:700;font-size:14px">'+formatDateShort(ev.fecha)+'</div>'
+      + '<div style="font-size:12px;color:var(--gt);margin-top:2px">'
+      + '⏱'+(ev.colgado_seg||'—')+'s · 🦵'+(ev.sentadillas||'—')+' · 🔁'+(ev.remos||'—')+' · 💪'+(ev.flexiones||'—')
+      + '</div></div><div style="color:var(--gt)">›</div></div></div>';
   });
-  list.appendChild(card);
+  hhtml += '</div>';
+  list.innerHTML = hhtml;
 }
 
 function viewEval(id){
-  const ev = evaluaciones.find(e=>e.id===id); if(!ev) return;
-  alert(`Evaluación ${formatDateShort(ev.fecha)}\n\n⏱ Colgado: ${ev.colgado_seg??'—'}s\n🦵 Sentadillas: ${ev.sentadillas??'—'} reps\n🔁 Remos: ${ev.remos??'—'} reps\n💪 Flexiones: ${ev.flexiones??'—'} reps\n\n${ev.notas||''}`);
+  var ev = evaluaciones.find(function(e){return e.id===id;});
+  if(!ev) return;
+  alert('Evaluación '+formatDateShort(ev.fecha)+'\n\n⏱ Colgado: '+(ev.colgado_seg||'—')+'s\n🦵 Sentadillas: '+(ev.sentadillas||'—')+' reps\n🔁 Remos: '+(ev.remos||'—')+' reps\n💪 Flexiones: '+(ev.flexiones||'—')+' reps\n\n'+(ev.notas||''));
 }
 
 function openNewEval(){
@@ -1290,22 +1291,21 @@ function openNewEval(){
 }
 
 async function saveEval(){
-  const fecha=document.getElementById('eval-fecha').value;
+  var fecha=document.getElementById('eval-fecha').value;
   if(!fecha){showToast('⚠️ Pon la fecha');return;}
-  const body={
-    cliente_id:currentUser.id,
-    fecha,
+  var body={
+    cliente_id:currentUser.id, fecha:fecha,
     colgado_seg: parseInt(document.getElementById('eval-colgado').value)||null,
     sentadillas: parseInt(document.getElementById('eval-sentadillas').value)||null,
     remos:       parseInt(document.getElementById('eval-remos').value)||null,
     flexiones:   parseInt(document.getElementById('eval-flexiones').value)||null,
     notas:       document.getElementById('eval-notas').value.trim()
   };
-  const btn=document.getElementById('btn-save-eval');
+  var btn=document.getElementById('btn-save-eval');
   btn.textContent='Guardando...';btn.disabled=true;
   try{
-    const [saved]=await sbPost('evaluaciones',body);
-    evaluaciones.unshift(saved);
+    var saved=await sbPost('evaluaciones',body);
+    evaluaciones.unshift(saved[0]);
     closeModal('modal-eval');
     renderEval();
     showToast('✅ Evaluación guardada');
@@ -1316,26 +1316,26 @@ async function saveEval(){
 // ═══════════════════════════════════════════════
 // FUNDAMENTALES
 // ═══════════════════════════════════════════════
-let fundamentalesData = {};  // keyed by movimiento
+var fundamentalesData = {};
 
-const GOMAS = ['Sin goma','Amarilla (más fina)','Roja','Azul','Verde','Negra (más gruesa)'];
-const VARIACIONES_PINO = [
+var GOMAS = ['Sin goma','Amarilla (más fina)','Roja','Azul','Verde','Negra (más gruesa)'];
+var VARIACIONES_PINO = [
   {val:'pike_declinado',  label:'Pike declinado (más fácil)'},
   {val:'pike_normal',     label:'Pike push-up normal'},
   {val:'pike_elevado',    label:'Pike elevado (más difícil)'},
   {val:'pino_pared',      label:'Pino en pared + flexión'},
 ];
-const MOVIMIENTOS = {
-  dominadas:        {label:'Dominadas',      icon:'💪', tipo:'goma'},
-  flexiones:        {label:'Flexiones',      icon:'🤸', tipo:'goma'},
-  sentadillas:      {label:'Sentadillas',    icon:'🦵', tipo:'peso'},
-  empuje_vertical:  {label:'Empuje Vertical',icon:'⬆️', tipo:'mixto'},
+var MOVIMIENTOS = {
+  dominadas:       {label:'Dominadas',       icon:'💪', tipo:'goma'},
+  flexiones:       {label:'Flexiones',       icon:'🤸', tipo:'goma'},
+  sentadillas:     {label:'Sentadillas',     icon:'🦵', tipo:'peso'},
+  empuje_vertical: {label:'Empuje Vertical', icon:'⬆️', tipo:'mixto'},
 };
 
 async function loadFundamentales(){
-  const rows = await sbGet('fundamentales',`cliente_id=eq.${currentUser.id}&order=fecha.desc&select=*`);
+  var rows = await sbGet('fundamentales','cliente_id=eq.'+currentUser.id+'&order=fecha.desc&select=*');
   fundamentalesData={};
-  rows.forEach(r=>{
+  rows.forEach(function(r){
     if(!fundamentalesData[r.movimiento]) fundamentalesData[r.movimiento]=[];
     fundamentalesData[r.movimiento].push(r);
   });
@@ -1343,213 +1343,178 @@ async function loadFundamentales(){
 
 function setFundTab(mov, btn){
   activeFundTab=mov;
-  document.querySelectorAll('.fund-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.fund-tab').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
   renderFund();
 }
 
 function renderFund(){
-  const mov = MOVIMIENTOS[activeFundTab];
-  const rows = fundamentalesData[activeFundTab]||[];
-  const content = document.getElementById('fund-content');
-  content.innerHTML='';
+  var mov = MOVIMIENTOS[activeFundTab];
+  var rows = fundamentalesData[activeFundTab]||[];
+  var content = document.getElementById('fund-content');
 
-  // Info box
-  const infoTexts={
-    dominadas:'<strong>Sistema cluster:</strong> Elige una goma con la que puedas hacer 6 reps. Haz 10 series de 1–3 reps. Cuando completes 10×3, cambia a una goma más fina.',
+  var infoTexts={
+    dominadas:'<strong>Sistema cluster:</strong> Elige una goma con la que puedas hacer 6 reps. Haz 10 series de 1–3 reps. Cuando completes 10×3, cambia a goma más fina.',
     flexiones:'<strong>Sistema cluster:</strong> Goma atada a la barra en la cintura. 10 series de 1–3 reps. Cuando completes 10×3, cambia a goma más fina.',
     sentadillas:'<strong>Sistema cluster:</strong> Elige un peso con el que puedas hacer 6 reps. 10 series de 1–3 reps. Cuando completes 10×3, sube el peso.',
     empuje_vertical:'<strong>Con kettlebell</strong> o <strong>progresión de pino</strong>. Mismo sistema: 10 series de 1–3 reps hasta completar 10×3.',
   };
-  content.innerHTML=`<div class="info-box">${infoTexts[activeFundTab]}</div>`;
+
+  var html = '<div class="info-box">'+infoTexts[activeFundTab]+'</div>';
 
   if(!rows.length){
-    content.innerHTML+=`<div class="empty" style="padding:32px 24px"><div class="empty-icon">${mov.icon}</div><h3>Sin registros</h3><p>Registra tu primera sesión de ${mov.label}</p></div>`;
+    html += '<div class="empty" style="padding:32px 24px"><div class="empty-icon">'+mov.icon+'</div><h3>Sin registros</h3><p>Registra tu primera sesión de '+mov.label+'</p></div>';
+    content.innerHTML = html;
     return;
   }
 
-  // Last session summary
-  const last=rows[0];
-  const series=(last.series||[]);
-  const total=series.reduce((a,s)=>a+(s.reps||0),0);
-  const completado=series.length>=10&&series.every(s=>s.reps>=3);
-  let paramHtml='';
-  if(last.goma) paramHtml=`<span class="badge-goma">🔴 ${last.goma}</span>`;
-  if(last.peso_kg) paramHtml=`<span class="badge-kg">⚖️ ${last.peso_kg}kg</span>`;
-  if(last.variacion) paramHtml=`<span class="badge-var">🤸 ${VARIACIONES_PINO.find(v=>v.val===last.variacion)?.label||last.variacion}</span>`;
+  var last = rows[0];
+  var series = last.series||[];
+  var total = series.reduce(function(a,s){return a+(s.reps||0);},0);
+  var completado = series.length>=10 && series.every(function(s){return s.reps>=3;});
 
-  content.innerHTML+=`<div style="padding:0 14px 4px"><div class="section-title" style="padding:4px 0;font-size:14px">Última sesión — ${formatDateShort(last.fecha)}</div></div>
-  <div class="card">
-    <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
-      <div>${paramHtml}</div>
-      ${completado?'<span class="badge-var">✅ 10×3 completado</span>':'<span style="font-size:12px;color:var(--gt)">'+series.length+' series · '+total+' reps</span>'}
-    </div>
-    <div style="padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px">
-      ${series.map((s,i)=>`<div style="background:var(--gm);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700">S${i+1}: <span style="color:${s.reps>=3?'var(--green)':s.reps>=2?'var(--yellow)':'var(--cream)'}">${s.reps}</span></div>`).join('')}
-    </div>
-    ${last.notas?`<div style="padding:0 14px 12px;font-size:12px;color:var(--gt)">📝 ${last.notas}</div>`:''}
-  </div>`;
+  var paramHtml = '';
+  if(last.goma) paramHtml = '<span class="badge-goma">🔴 '+last.goma+'</span>';
+  else if(last.peso_kg) paramHtml = '<span class="badge-kg">⚖️ '+last.peso_kg+'kg</span>';
+  else if(last.variacion){
+    var vFound = VARIACIONES_PINO.find(function(v){return v.val===last.variacion;});
+    paramHtml = '<span class="badge-var">🤸 '+(vFound?vFound.label:last.variacion)+'</span>';
+  }
 
-  // Progression chart
+  var statusHtml = completado
+    ? '<span class="badge-var">✅ 10×3 completado</span>'
+    : '<span style="font-size:12px;color:var(--gt)">'+series.length+' series · '+total+' reps</span>';
+
+  var seriesHtml = series.map(function(s,i){
+    var col = s.reps>=3 ? 'var(--green)' : s.reps>=2 ? 'var(--yellow)' : 'var(--cream)';
+    return '<div style="background:var(--gm);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700">S'+(i+1)+': <span style="color:'+col+'">'+s.reps+'</span></div>';
+  }).join('');
+
+  html += '<div style="padding:0 14px 4px"><div class="section-title" style="padding:4px 0;font-size:14px">Última sesión — '+formatDateShort(last.fecha)+'</div></div>';
+  html += '<div class="card">';
+  html += '<div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between"><div>'+paramHtml+'</div>'+statusHtml+'</div>';
+  html += '<div style="padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px">'+seriesHtml+'</div>';
+  if(last.notas) html += '<div style="padding:0 14px 12px;font-size:12px;color:var(--gt)">📝 '+last.notas+'</div>';
+  html += '</div>';
+
+  // Chart
   if(rows.length>1){
-    content.innerHTML+=`<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Progresión (total reps por sesión)</div></div>`;
-    const points=rows.slice(0,8).reverse();
-    const maxReps=Math.max(...points.map(r=>(r.series||[]).reduce((a,s)=>a+(s.reps||0),0)),1);
-    const bars=points.map(r=>{
-      const tot=(r.series||[]).reduce((a,s)=>a+(s.reps||0),0);
-      const h=Math.max(Math.round((tot/maxReps)*100),5);
-      const comp=(r.series||[]).length>=10&&(r.series||[]).every(s=>s.reps>=3);
-      return`<div class="mini-bar" style="height:${h}%;background:${comp?'var(--green)':'var(--granate)'}" data-val="${tot}"></div>`;
+    var points = rows.slice(0,8).reverse();
+    var maxReps = Math.max.apply(null, points.map(function(r){return (r.series||[]).reduce(function(a,s){return a+(s.reps||0);},0);}));
+    if(maxReps<1) maxReps=1;
+    var bars = points.map(function(r){
+      var tot=(r.series||[]).reduce(function(a,s){return a+(s.reps||0);},0);
+      var h=Math.max(Math.round((tot/maxReps)*100),5);
+      var comp=(r.series||[]).length>=10&&(r.series||[]).every(function(s){return s.reps>=3;});
+      return '<div class="mini-bar" style="height:'+h+'%;background:'+(comp?'var(--green)':'var(--granate)')+'" data-val="'+tot+'"></div>';
     }).join('');
-    content.innerHTML+=`<div class="card" style="padding:14px">
-      <div class="mini-chart">${bars}</div>
-      <div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px">Verde = 10×3 completado</div>
-    </div>`;
+    html += '<div class="section-title">Progresión (reps totales)</div>';
+    html += '<div class="card" style="padding:14px"><div class="mini-chart">'+bars+'</div>';
+    html += '<div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px">Verde = 10×3 completado</div></div>';
 
-    // History list
-    content.innerHTML+=`<div class="section-title">Historial</div>`;
-    const card=document.createElement('div'); card.className='card';
-    rows.slice(1).forEach(r=>{
-      const tot=(r.series||[]).reduce((a,s)=>a+(s.reps||0),0);
-      let param='';
+    html += '<div class="section-title">Historial</div><div class="card">';
+    rows.slice(1).forEach(function(r){
+      var tot=(r.series||[]).reduce(function(a,s){return a+(s.reps||0);},0);
+      var param='';
       if(r.goma) param=r.goma;
       else if(r.peso_kg) param=r.peso_kg+'kg';
-      else if(r.variacion) param=VARIACIONES_PINO.find(v=>v.val===r.variacion)?.label||r.variacion;
-      const row=document.createElement('div'); row.className='fund-hist-row';
-      row.innerHTML=`<div style="flex:1">
-        <div style="font-weight:700;font-size:13px">${formatDateShort(r.fecha)} ${param?'· '+param:''}</div>
-        <div style="font-size:12px;color:var(--gt);margin-top:2px">${r.series?.length||0} series · ${tot} reps totales</div>
-      </div><div style="color:var(--gt)">›</div>`;
-      card.appendChild(row);
+      else if(r.variacion){ var vv=VARIACIONES_PINO.find(function(v){return v.val===r.variacion;}); param=vv?vv.label:r.variacion; }
+      html += '<div style="padding:11px 14px;border-bottom:1px solid var(--gm)">'
+        +'<div style="font-weight:700;font-size:13px">'+formatDateShort(r.fecha)+(param?' · '+param:'')+'</div>'
+        +'<div style="font-size:12px;color:var(--gt);margin-top:2px">'+(r.series&&r.series.length||0)+' series · '+tot+' reps</div>'
+        +'</div>';
     });
-    content.appendChild(card);
+    html += '</div>';
   }
+
+  content.innerHTML = html;
 }
 
 function openNewFund(){
-  const mov = MOVIMIENTOS[activeFundTab];
+  var mov = MOVIMIENTOS[activeFundTab];
   document.getElementById('modal-fund-title').textContent = mov.icon+' '+mov.label;
-  document.getElementById('fund-fecha').value=todayISO();
-  
-  const last=(fundamentalesData[activeFundTab]||[])[0];
-  const body=document.getElementById('fund-modal-body');
-  
-  // Build 10 series inputs
-  let seriesHtml='<div class="form-group"><label class="form-label">Series (10 series de 1–3 reps)</label><div class="fund-series-grid">';
-  for(let i=0;i<10;i++){
-    const lastReps=last?.series?.[i]?.reps||'';
-    seriesHtml+=`<div>
-      <input type="number" class="fund-serie-input" id="fund-s${i}" min="0" max="10" inputmode="numeric" placeholder="0" value="">
-      <div class="fund-serie-lbl">S${i+1}</div>
-    </div>`;
+  document.getElementById('fund-fecha').value = todayISO();
+  var last=(fundamentalesData[activeFundTab]||[])[0]||null;
+  var body=document.getElementById('fund-modal-body');
+
+  var gomasOptions = GOMAS.map(function(g){
+    return '<option value="'+g+'"'+(g===(last&&last.goma)?'selected':'')+'>'+g+'</option>';
+  }).join('');
+
+  var seriesHtml='<div class="form-group"><label class="form-label">Series (10 series de 1–3 reps)</label><div class="fund-series-grid">';
+  for(var i=0;i<10;i++){
+    seriesHtml+='<div><input type="number" class="fund-serie-input" id="fund-s'+i+'" min="0" max="10" inputmode="numeric" placeholder="0"><div class="fund-serie-lbl">S'+(i+1)+'</div></div>';
   }
   seriesHtml+='</div></div>';
 
-  let paramHtml='';
-  if(mov.tipo==='goma'||mov.tipo==='mixto'){
-    const lastGoma=last?.goma||'';
-    const gomasOptions=GOMAS.map(g=>`<option value="${g}" ${g===lastGoma?'selected':''}>${g}</option>`).join('');
-    if(mov.tipo==='mixto'){
-      const lastMode=last?.variacion?'corporal':(last?.peso_kg?'peso':'peso');
-      paramHtml=`<div class="form-group">
-        <label class="form-label">Modalidad</label>
-        <select class="form-select" id="fund-modalidad" onchange="toggleFundModalidad()">
-          <option value="peso" ${lastMode==='peso'?'selected':''}>Con kettlebell (peso)</option>
-          <option value="corporal" ${lastMode==='corporal'?'selected':''}>Peso corporal (progresión pino)</option>
-        </select>
-      </div>
-      <div id="fund-param-peso">
-        <div class="form-group">
-          <label class="form-label">Peso (kg)</label>
-          <input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="${last?.peso_kg||''}">
-        </div>
-      </div>
-      <div id="fund-param-corporal" style="display:none">
-        <div class="form-group">
-          <label class="form-label">Variación</label>
-          <select class="form-select" id="fund-variacion">
-            ${VARIACIONES_PINO.map(v=>`<option value="${v.val}" ${v.val===last?.variacion?'selected':''}>${v.label}</option>`).join('')}
-          </select>
-        </div>
-      </div>`;
-      // Check last mode
-      if(lastMode==='corporal') paramHtml=paramHtml; // will toggle on render
-    } else {
-      // goma only
-      paramHtml=`<div class="form-group">
-        <label class="form-label">Goma utilizada</label>
-        <select class="form-select" id="fund-goma">${gomasOptions}</select>
-      </div>`;
-    }
+  var paramHtml='';
+  if(mov.tipo==='goma'){
+    paramHtml='<div class="form-group"><label class="form-label">Goma utilizada</label><select class="form-select" id="fund-goma">'+gomasOptions+'</select></div>';
+  } else if(mov.tipo==='peso'){
+    paramHtml='<div class="form-group"><label class="form-label">Peso kettlebell (kg)</label><input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="'+(last&&last.peso_kg||'')+'"></div>';
   } else {
-    // peso only
-    paramHtml=`<div class="form-group">
-      <label class="form-label">Peso kettlebell (kg)</label>
-      <input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="${last?.peso_kg||''}">
-    </div>`;
+    var varOptions=VARIACIONES_PINO.map(function(v){
+      return '<option value="'+v.val+'"'+(v.val===(last&&last.variacion)?'selected':'')+'>'+v.label+'</option>';
+    }).join('');
+    var lastMode=(last&&last.variacion)?'corporal':'peso';
+    paramHtml='<div class="form-group"><label class="form-label">Modalidad</label>'
+      +'<select class="form-select" id="fund-modalidad" onchange="toggleFundModalidad()">'
+      +'<option value="peso"'+(lastMode==='peso'?' selected':'')+'>Con kettlebell (peso)</option>'
+      +'<option value="corporal"'+(lastMode==='corporal'?' selected':'')+'>Peso corporal (progresión pino)</option>'
+      +'</select></div>'
+      +'<div id="fund-param-peso" style="display:'+(lastMode==='peso'?'block':'none')+'">'
+      +'<div class="form-group"><label class="form-label">Peso (kg)</label>'
+      +'<input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="'+(last&&last.peso_kg||'')+'"></div></div>'
+      +'<div id="fund-param-corporal" style="display:'+(lastMode==='corporal'?'block':'none')+'">'
+      +'<div class="form-group"><label class="form-label">Variación</label>'
+      +'<select class="form-select" id="fund-variacion">'+varOptions+'</select></div></div>';
   }
 
-  body.innerHTML=paramHtml+seriesHtml+`<div class="form-group">
-    <label class="form-label">Notas</label>
-    <textarea class="form-input" id="fund-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
-  </div>`;
-
-  // Toggle modalidad if mixto and last was corporal
-  if(mov.tipo==='mixto' && last?.variacion){
-    setTimeout(()=>{
-      const sel=document.getElementById('fund-modalidad');
-      if(sel){ sel.value='corporal'; toggleFundModalidad(); }
-    },50);
-  }
+  body.innerHTML = paramHtml+seriesHtml
+    +'<div class="form-group"><label class="form-label">Notas</label>'
+    +'<textarea class="form-input" id="fund-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea></div>';
 
   openModal('modal-fund');
 }
 
 function toggleFundModalidad(){
-  const val=document.getElementById('fund-modalidad')?.value;
+  var val=document.getElementById('fund-modalidad').value;
   document.getElementById('fund-param-peso').style.display=val==='peso'?'block':'none';
   document.getElementById('fund-param-corporal').style.display=val==='corporal'?'block':'none';
 }
 
 async function saveFund(){
-  const fecha=document.getElementById('fund-fecha').value;
+  var fecha=document.getElementById('fund-fecha').value;
   if(!fecha){showToast('⚠️ Pon la fecha');return;}
-  const mov=MOVIMIENTOS[activeFundTab];
-  
-  const series=[];
-  for(let i=0;i<10;i++){
-    const v=parseInt(document.getElementById('fund-s'+i)?.value)||0;
+  var mov=MOVIMIENTOS[activeFundTab];
+  var series=[];
+  for(var i=0;i<10;i++){
+    var el=document.getElementById('fund-s'+i);
+    var v=el?parseInt(el.value)||0:0;
     if(v>0) series.push({reps:v});
   }
   if(!series.length){showToast('⚠️ Registra al menos una serie');return;}
-
-  let goma=null,peso_kg=null,variacion=null;
+  var goma=null,peso_kg=null,variacion=null;
   if(mov.tipo==='goma'){
-    goma=document.getElementById('fund-goma')?.value||null;
+    var ge=document.getElementById('fund-goma'); if(ge) goma=ge.value||null;
   } else if(mov.tipo==='peso'){
-    peso_kg=parseFloat(document.getElementById('fund-peso')?.value)||null;
-  } else if(mov.tipo==='mixto'){
-    const modalidad=document.getElementById('fund-modalidad')?.value;
-    if(modalidad==='peso') peso_kg=parseFloat(document.getElementById('fund-peso')?.value)||null;
-    else variacion=document.getElementById('fund-variacion')?.value||null;
+    var pe=document.getElementById('fund-peso'); if(pe) peso_kg=parseFloat(pe.value)||null;
+  } else {
+    var me=document.getElementById('fund-modalidad');
+    if(me&&me.value==='peso'){ var pe2=document.getElementById('fund-peso'); if(pe2) peso_kg=parseFloat(pe2.value)||null; }
+    else { var ve=document.getElementById('fund-variacion'); if(ve) variacion=ve.value||null; }
   }
-
-  const notas=document.getElementById('fund-notas')?.value?.trim()||'';
-  const btn=document.getElementById('btn-save-fund');
+  var notas=document.getElementById('fund-notas')&&document.getElementById('fund-notas').value.trim()||'';
+  var btn=document.getElementById('btn-save-fund');
   btn.textContent='Guardando...';btn.disabled=true;
   try{
-    const [saved]=await sbPost('fundamentales',{
-      cliente_id:currentUser.id,fecha,
-      movimiento:activeFundTab,
-      goma,peso_kg,variacion,series,notas
-    });
+    var saved=await sbPost('fundamentales',{cliente_id:currentUser.id,fecha:fecha,movimiento:activeFundTab,goma:goma,peso_kg:peso_kg,variacion:variacion,series:series,notas:notas});
     if(!fundamentalesData[activeFundTab]) fundamentalesData[activeFundTab]=[];
-    fundamentalesData[activeFundTab].unshift(saved);
+    fundamentalesData[activeFundTab].unshift(saved[0]);
     closeModal('modal-fund');
     renderFund();
-    // Check if 10x3 completed
-    if(series.length>=10&&series.every(s=>s.reps>=3)){
-      setTimeout(()=>showToast('🎉 ¡10×3 completado! Es hora de progresar'),500);
+    if(series.length>=10&&series.every(function(s){return s.reps>=3;})){
+      setTimeout(function(){showToast('🎉 10×3 completado! Hora de progresar');},500);
     } else {
       showToast('✅ Sesión guardada');
     }
