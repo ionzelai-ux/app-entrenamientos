@@ -159,6 +159,36 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .loading{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--gt);flex-direction:column;gap:12px}
 .spinner{width:32px;height:32px;border:3px solid var(--gl);border-top-color:var(--granate);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── EVALUACIÓN ── */
+.eval-card{background:var(--gd);border-radius:12px;margin:10px 14px;overflow:hidden}
+.eval-metric{padding:14px;border-bottom:1px solid var(--gm);display:flex;align-items:center;gap:12px}
+.eval-metric:last-child{border-bottom:none}
+.eval-icon{width:40px;height:40px;background:rgba(151,39,46,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.eval-info{flex:1}
+.eval-name{font-weight:700;font-size:14px;color:var(--cream)}
+.eval-best{font-size:12px;color:var(--gt);margin-top:2px}
+.eval-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--granate);line-height:1}
+.eval-unit{font-size:11px;color:var(--gt);text-transform:uppercase}
+/* ── FUNDAMENTALES ── */
+.fund-tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.fund-tabs::-webkit-scrollbar{display:none}
+.fund-tab{flex:0 0 auto;padding:8px 14px;border-radius:20px;border:2px solid var(--gl);background:none;color:var(--gt);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap}
+.fund-tab.active{border-color:var(--granate);color:var(--cream);background:rgba(151,39,46,.15)}
+.fund-series-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.fund-serie-input{background:var(--gm);border:1.5px solid var(--gl);border-radius:8px;padding:10px 4px;color:var(--cream);font-size:18px;font-weight:700;text-align:center;width:100%;-webkit-appearance:none;font-family:'Bebas Neue',sans-serif}
+.fund-serie-input:focus{outline:none;border-color:var(--granate)}
+.fund-serie-lbl{font-size:10px;color:var(--gt);text-align:center;margin-top:3px;text-transform:uppercase}
+.fund-hist-row{padding:11px 14px;border-bottom:1px solid var(--gm);display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.fund-hist-row:last-child{border-bottom:none}
+.fund-prog-line{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gm);font-size:12px}
+.fund-prog-line:last-child{border-bottom:none}
+.badge-goma{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(151,39,46,.2);color:var(--granate);text-transform:uppercase}
+.badge-kg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(232,160,32,.2);color:var(--yellow)}
+.badge-var{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(58,173,110,.2);color:var(--green)}
+.info-box{background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:10px 12px;margin:0 14px 10px;font-size:12px;color:var(--gt);line-height:1.5}
+.info-box strong{color:var(--cream)}
+
 /* ── SEPARADOR ── */
 .sep{height:1px;background:var(--gl);margin:12px 0}
 </style>
@@ -261,6 +291,40 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     </div>
   </div>
 
+
+  <!-- EVALUACIÓN -->
+  <div class="screen" id="screen-eval">
+    <div class="header">
+      <img class="header-logo" src="data:image/jpeg;base64,%%SKIP%%" alt="CODEK" style="display:none">
+      <div class="header-info">
+        <div class="header-title">Evaluación</div>
+        <div class="header-sub">Test de condición física</div>
+      </div>
+      <button class="btn btn-sm" onclick="openNewEval()" style="background:var(--granate);color:#fff">+ Registrar</button>
+    </div>
+    <div id="eval-last-box"></div>
+    <div id="eval-hist-list"></div>
+  </div>
+
+  <!-- FUNDAMENTALES -->
+  <div class="screen" id="screen-fund">
+    <div class="header">
+      <img class="header-logo" src="data:image/jpeg;base64,%%SKIP%%" alt="CODEK" style="display:none">
+      <div class="header-info">
+        <div class="header-title">Fundamentales</div>
+        <div class="header-sub">Movimientos clave</div>
+      </div>
+      <button class="btn btn-sm" onclick="openNewFund()" style="background:var(--granate);color:#fff">+ Registrar</button>
+    </div>
+    <div class="fund-tabs" id="fund-tabs">
+      <button class="fund-tab active" onclick="setFundTab('dominadas',this)">💪 Dominadas</button>
+      <button class="fund-tab" onclick="setFundTab('flexiones',this)">🤸 Flexiones</button>
+      <button class="fund-tab" onclick="setFundTab('sentadillas',this)">🦵 Sentadillas</button>
+      <button class="fund-tab" onclick="setFundTab('empuje_vertical',this)">⬆️ Empuje V.</button>
+    </div>
+    <div id="fund-content"></div>
+  </div>
+
   <!-- NAV -->
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('tabla',this)">
@@ -275,7 +339,15 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Progresión
     </button>
-    <button class="nav-btn hide" id="nav-admin" onclick="showScreen('admin',this)">
+    <button class="nav-btn" onclick="showScreen('eval',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Eval
+    </button>
+    <button class="nav-btn" onclick="showScreen('fund',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Fund.
+    </button>
+        <button class="nav-btn hide" id="nav-admin" onclick="showScreen('admin',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Admin
     </button>
@@ -391,6 +463,65 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
   </div>
 </div>
 
+
+<!-- MODAL: NUEVA EVALUACIÓN -->
+<div class="modal-overlay" id="modal-eval">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nueva Evaluación</div>
+      <button class="modal-close" onclick="closeModal('modal-eval')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input type="date" class="form-input" id="eval-fecha">
+    </div>
+    <div class="info-box">Test de <strong>30 segundos</strong> para sentadillas, remos y flexiones. El colgado es tiempo máximo.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">⏱ Colgado (seg)</label>
+        <input type="number" class="form-input" id="eval-colgado" placeholder="0" min="0" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🦵 Sentadillas (30s)</label>
+        <input type="number" class="form-input" id="eval-sentadillas" placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">🔁 Remos anillas (30s)</label>
+        <input type="number" class="form-input" id="eval-remos" placeholder="0" min="0" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">💪 Flexiones (30s)</label>
+        <input type="number" class="form-input" id="eval-flexiones" placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas</label>
+      <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="saveEval()" id="btn-save-eval">Guardar evaluación</button>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO FUNDAMENTAL -->
+<div class="modal-overlay" id="modal-fund">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-fund-title">Registrar</div>
+      <button class="modal-close" onclick="closeModal('modal-fund')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input type="date" class="form-input" id="fund-fecha">
+    </div>
+    <div id="fund-modal-body"></div>
+    <button class="btn btn-primary" onclick="saveFund()" id="btn-save-fund">Guardar</button>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -460,7 +591,7 @@ async function initApp() {
   document.getElementById('app').style.display='block';
   document.getElementById('hdr-name').textContent = currentUser.nombre;
   if(currentUser.es_admin) document.getElementById('nav-admin').classList.remove('hide');
-  await Promise.all([loadActiveCiclo(), loadSessions()]);
+  await Promise.all([loadActiveCiclo(), loadSessions(), loadEvaluaciones(), loadFundamentales()]);
   renderTabla();
 }
 
@@ -493,6 +624,8 @@ function showScreen(name, btn) {
   if(name==='tabla')  renderTabla();
   if(name==='hist')   renderHist();
   if(name==='prog')   renderProg();
+  if(name==='eval')   renderEval();
+  if(name==='fund')   renderFund();
   if(name==='admin')  renderAdmin();
 }
 
@@ -1073,6 +1206,357 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800);
 }
+
+
+// ═══════════════════════════════════════════════
+// EVALUACIONES
+// ═══════════════════════════════════════════════
+let evaluaciones = [];
+let activeFundTab = 'dominadas';
+
+async function loadEvaluaciones(){
+  evaluaciones = await sbGet('evaluaciones', `cliente_id=eq.${currentUser.id}&order=fecha.desc&select=*`);
+}
+
+function renderEval(){
+  const last = evaluaciones[0];
+  const box = document.getElementById('eval-last-box');
+  
+  if(last){
+    const metrics = [
+      {icon:'⏱',name:'Colgado en barra',val:last.colgado_seg,unit:'seg'},
+      {icon:'🦵',name:'Sentadillas 30s',val:last.sentadillas,unit:'reps'},
+      {icon:'🔁',name:'Remos en anillas 30s',val:last.remos,unit:'reps'},
+      {icon:'💪',name:'Flexiones 30s',val:last.flexiones,unit:'reps'},
+    ];
+    let html = `<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Último test — ${formatDateShort(last.fecha)}</div></div>
+    <div class="eval-card">`;
+    metrics.forEach(m=>{
+      if(m.val===null||m.val===undefined) return;
+      // Find previous for delta
+      const prev = evaluaciones[1];
+      const prevVal = prev ? prev[['colgado_seg','sentadillas','remos','flexiones'][metrics.indexOf(m)]] : null;
+      const delta = prevVal!==null && prevVal!==undefined ? m.val - prevVal : null;
+      const deltaHtml = delta!==null ? `<span style="color:${delta>=0?'var(--green)':'var(--red)';font-size:11px;margin-left:4px">${delta>0?'+':''}${delta}</span>` : '';
+      html+=`<div class="eval-metric">
+        <div class="eval-icon">${m.icon}</div>
+        <div class="eval-info"><div class="eval-name">${m.name}</div><div class="eval-best">${prevVal!==null&&prevVal!==undefined?'Anterior: '+prevVal+' '+m.unit:'Primera evaluación'}</div></div>
+        <div style="text-align:right"><div class="eval-val">${m.val}${deltaHtml}</div><div class="eval-unit">${m.unit}</div></div>
+      </div>`;
+    });
+    if(last.notas) html+=`<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 ${last.notas}</div>`;
+    html+='</div>';
+    box.innerHTML=html;
+  } else {
+    box.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación inicial</p></div>`;
+  }
+
+  // Historial
+  const list = document.getElementById('eval-hist-list');
+  if(evaluaciones.length <= 1){ list.innerHTML=''; return; }
+  list.innerHTML='<div class="section-title">Historial</div>';
+  const card = document.createElement('div'); card.className='card';
+  evaluaciones.slice(1).forEach(ev=>{
+    const row = document.createElement('div');
+    row.style.cssText='padding:11px 14px;border-bottom:1px solid var(--gm);cursor:pointer';
+    row.onclick = ()=>viewEval(ev.id);
+    row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:700;font-size:14px">${formatDateShort(ev.fecha)}</div>
+        <div style="font-size:12px;color:var(--gt);margin-top:2px">
+          ⏱${ev.colgado_seg??'—'}s · 🦵${ev.sentadillas??'—'} · 🔁${ev.remos??'—'} · 💪${ev.flexiones??'—'}
+        </div>
+      </div>
+      <div style="color:var(--gt)">›</div>
+    </div>`;
+    card.appendChild(row);
+  });
+  list.appendChild(card);
+}
+
+function viewEval(id){
+  const ev = evaluaciones.find(e=>e.id===id); if(!ev) return;
+  alert(`Evaluación ${formatDateShort(ev.fecha)}\n\n⏱ Colgado: ${ev.colgado_seg??'—'}s\n🦵 Sentadillas: ${ev.sentadillas??'—'} reps\n🔁 Remos: ${ev.remos??'—'} reps\n💪 Flexiones: ${ev.flexiones??'—'} reps\n\n${ev.notas||''}`);
+}
+
+function openNewEval(){
+  document.getElementById('eval-fecha').value = todayISO();
+  document.getElementById('eval-colgado').value='';
+  document.getElementById('eval-sentadillas').value='';
+  document.getElementById('eval-remos').value='';
+  document.getElementById('eval-flexiones').value='';
+  document.getElementById('eval-notas').value='';
+  openModal('modal-eval');
+}
+
+async function saveEval(){
+  const fecha=document.getElementById('eval-fecha').value;
+  if(!fecha){showToast('⚠️ Pon la fecha');return;}
+  const body={
+    cliente_id:currentUser.id,
+    fecha,
+    colgado_seg: parseInt(document.getElementById('eval-colgado').value)||null,
+    sentadillas: parseInt(document.getElementById('eval-sentadillas').value)||null,
+    remos:       parseInt(document.getElementById('eval-remos').value)||null,
+    flexiones:   parseInt(document.getElementById('eval-flexiones').value)||null,
+    notas:       document.getElementById('eval-notas').value.trim()
+  };
+  const btn=document.getElementById('btn-save-eval');
+  btn.textContent='Guardando...';btn.disabled=true;
+  try{
+    const [saved]=await sbPost('evaluaciones',body);
+    evaluaciones.unshift(saved);
+    closeModal('modal-eval');
+    renderEval();
+    showToast('✅ Evaluación guardada');
+  }catch(e){showToast('❌ Error al guardar');}
+  finally{btn.textContent='Guardar evaluación';btn.disabled=false;}
+}
+
+// ═══════════════════════════════════════════════
+// FUNDAMENTALES
+// ═══════════════════════════════════════════════
+let fundamentalesData = {};  // keyed by movimiento
+
+const GOMAS = ['Sin goma','Amarilla (más fina)','Roja','Azul','Verde','Negra (más gruesa)'];
+const VARIACIONES_PINO = [
+  {val:'pike_declinado',  label:'Pike declinado (más fácil)'},
+  {val:'pike_normal',     label:'Pike push-up normal'},
+  {val:'pike_elevado',    label:'Pike elevado (más difícil)'},
+  {val:'pino_pared',      label:'Pino en pared + flexión'},
+];
+const MOVIMIENTOS = {
+  dominadas:        {label:'Dominadas',      icon:'💪', tipo:'goma'},
+  flexiones:        {label:'Flexiones',      icon:'🤸', tipo:'goma'},
+  sentadillas:      {label:'Sentadillas',    icon:'🦵', tipo:'peso'},
+  empuje_vertical:  {label:'Empuje Vertical',icon:'⬆️', tipo:'mixto'},
+};
+
+async function loadFundamentales(){
+  const rows = await sbGet('fundamentales',`cliente_id=eq.${currentUser.id}&order=fecha.desc&select=*`);
+  fundamentalesData={};
+  rows.forEach(r=>{
+    if(!fundamentalesData[r.movimiento]) fundamentalesData[r.movimiento]=[];
+    fundamentalesData[r.movimiento].push(r);
+  });
+}
+
+function setFundTab(mov, btn){
+  activeFundTab=mov;
+  document.querySelectorAll('.fund-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFund();
+}
+
+function renderFund(){
+  const mov = MOVIMIENTOS[activeFundTab];
+  const rows = fundamentalesData[activeFundTab]||[];
+  const content = document.getElementById('fund-content');
+  content.innerHTML='';
+
+  // Info box
+  const infoTexts={
+    dominadas:'<strong>Sistema cluster:</strong> Elige una goma con la que puedas hacer 6 reps. Haz 10 series de 1–3 reps. Cuando completes 10×3, cambia a una goma más fina.',
+    flexiones:'<strong>Sistema cluster:</strong> Goma atada a la barra en la cintura. 10 series de 1–3 reps. Cuando completes 10×3, cambia a goma más fina.',
+    sentadillas:'<strong>Sistema cluster:</strong> Elige un peso con el que puedas hacer 6 reps. 10 series de 1–3 reps. Cuando completes 10×3, sube el peso.',
+    empuje_vertical:'<strong>Con kettlebell</strong> o <strong>progresión de pino</strong>. Mismo sistema: 10 series de 1–3 reps hasta completar 10×3.',
+  };
+  content.innerHTML=`<div class="info-box">${infoTexts[activeFundTab]}</div>`;
+
+  if(!rows.length){
+    content.innerHTML+=`<div class="empty" style="padding:32px 24px"><div class="empty-icon">${mov.icon}</div><h3>Sin registros</h3><p>Registra tu primera sesión de ${mov.label}</p></div>`;
+    return;
+  }
+
+  // Last session summary
+  const last=rows[0];
+  const series=(last.series||[]);
+  const total=series.reduce((a,s)=>a+(s.reps||0),0);
+  const completado=series.length>=10&&series.every(s=>s.reps>=3);
+  let paramHtml='';
+  if(last.goma) paramHtml=`<span class="badge-goma">🔴 ${last.goma}</span>`;
+  if(last.peso_kg) paramHtml=`<span class="badge-kg">⚖️ ${last.peso_kg}kg</span>`;
+  if(last.variacion) paramHtml=`<span class="badge-var">🤸 ${VARIACIONES_PINO.find(v=>v.val===last.variacion)?.label||last.variacion}</span>`;
+
+  content.innerHTML+=`<div style="padding:0 14px 4px"><div class="section-title" style="padding:4px 0;font-size:14px">Última sesión — ${formatDateShort(last.fecha)}</div></div>
+  <div class="card">
+    <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+      <div>${paramHtml}</div>
+      ${completado?'<span class="badge-var">✅ 10×3 completado</span>':'<span style="font-size:12px;color:var(--gt)">'+series.length+' series · '+total+' reps</span>'}
+    </div>
+    <div style="padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:6px">
+      ${series.map((s,i)=>`<div style="background:var(--gm);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700">S${i+1}: <span style="color:${s.reps>=3?'var(--green)':s.reps>=2?'var(--yellow)':'var(--cream)'}">${s.reps}</span></div>`).join('')}
+    </div>
+    ${last.notas?`<div style="padding:0 14px 12px;font-size:12px;color:var(--gt)">📝 ${last.notas}</div>`:''}
+  </div>`;
+
+  // Progression chart
+  if(rows.length>1){
+    content.innerHTML+=`<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Progresión (total reps por sesión)</div></div>`;
+    const points=rows.slice(0,8).reverse();
+    const maxReps=Math.max(...points.map(r=>(r.series||[]).reduce((a,s)=>a+(s.reps||0),0)),1);
+    const bars=points.map(r=>{
+      const tot=(r.series||[]).reduce((a,s)=>a+(s.reps||0),0);
+      const h=Math.max(Math.round((tot/maxReps)*100),5);
+      const comp=(r.series||[]).length>=10&&(r.series||[]).every(s=>s.reps>=3);
+      return`<div class="mini-bar" style="height:${h}%;background:${comp?'var(--green)':'var(--granate)'}" data-val="${tot}"></div>`;
+    }).join('');
+    content.innerHTML+=`<div class="card" style="padding:14px">
+      <div class="mini-chart">${bars}</div>
+      <div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px">Verde = 10×3 completado</div>
+    </div>`;
+
+    // History list
+    content.innerHTML+=`<div class="section-title">Historial</div>`;
+    const card=document.createElement('div'); card.className='card';
+    rows.slice(1).forEach(r=>{
+      const tot=(r.series||[]).reduce((a,s)=>a+(s.reps||0),0);
+      let param='';
+      if(r.goma) param=r.goma;
+      else if(r.peso_kg) param=r.peso_kg+'kg';
+      else if(r.variacion) param=VARIACIONES_PINO.find(v=>v.val===r.variacion)?.label||r.variacion;
+      const row=document.createElement('div'); row.className='fund-hist-row';
+      row.innerHTML=`<div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${formatDateShort(r.fecha)} ${param?'· '+param:''}</div>
+        <div style="font-size:12px;color:var(--gt);margin-top:2px">${r.series?.length||0} series · ${tot} reps totales</div>
+      </div><div style="color:var(--gt)">›</div>`;
+      card.appendChild(row);
+    });
+    content.appendChild(card);
+  }
+}
+
+function openNewFund(){
+  const mov = MOVIMIENTOS[activeFundTab];
+  document.getElementById('modal-fund-title').textContent = mov.icon+' '+mov.label;
+  document.getElementById('fund-fecha').value=todayISO();
+  
+  const last=(fundamentalesData[activeFundTab]||[])[0];
+  const body=document.getElementById('fund-modal-body');
+  
+  // Build 10 series inputs
+  let seriesHtml='<div class="form-group"><label class="form-label">Series (10 series de 1–3 reps)</label><div class="fund-series-grid">';
+  for(let i=0;i<10;i++){
+    const lastReps=last?.series?.[i]?.reps||'';
+    seriesHtml+=`<div>
+      <input type="number" class="fund-serie-input" id="fund-s${i}" min="0" max="10" inputmode="numeric" placeholder="0" value="">
+      <div class="fund-serie-lbl">S${i+1}</div>
+    </div>`;
+  }
+  seriesHtml+='</div></div>';
+
+  let paramHtml='';
+  if(mov.tipo==='goma'||mov.tipo==='mixto'){
+    const lastGoma=last?.goma||'';
+    const gomasOptions=GOMAS.map(g=>`<option value="${g}" ${g===lastGoma?'selected':''}>${g}</option>`).join('');
+    if(mov.tipo==='mixto'){
+      const lastMode=last?.variacion?'corporal':(last?.peso_kg?'peso':'peso');
+      paramHtml=`<div class="form-group">
+        <label class="form-label">Modalidad</label>
+        <select class="form-select" id="fund-modalidad" onchange="toggleFundModalidad()">
+          <option value="peso" ${lastMode==='peso'?'selected':''}>Con kettlebell (peso)</option>
+          <option value="corporal" ${lastMode==='corporal'?'selected':''}>Peso corporal (progresión pino)</option>
+        </select>
+      </div>
+      <div id="fund-param-peso">
+        <div class="form-group">
+          <label class="form-label">Peso (kg)</label>
+          <input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="${last?.peso_kg||''}">
+        </div>
+      </div>
+      <div id="fund-param-corporal" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Variación</label>
+          <select class="form-select" id="fund-variacion">
+            ${VARIACIONES_PINO.map(v=>`<option value="${v.val}" ${v.val===last?.variacion?'selected':''}>${v.label}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+      // Check last mode
+      if(lastMode==='corporal') paramHtml=paramHtml; // will toggle on render
+    } else {
+      // goma only
+      paramHtml=`<div class="form-group">
+        <label class="form-label">Goma utilizada</label>
+        <select class="form-select" id="fund-goma">${gomasOptions}</select>
+      </div>`;
+    }
+  } else {
+    // peso only
+    paramHtml=`<div class="form-group">
+      <label class="form-label">Peso kettlebell (kg)</label>
+      <input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="${last?.peso_kg||''}">
+    </div>`;
+  }
+
+  body.innerHTML=paramHtml+seriesHtml+`<div class="form-group">
+    <label class="form-label">Notas</label>
+    <textarea class="form-input" id="fund-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
+  </div>`;
+
+  // Toggle modalidad if mixto and last was corporal
+  if(mov.tipo==='mixto' && last?.variacion){
+    setTimeout(()=>{
+      const sel=document.getElementById('fund-modalidad');
+      if(sel){ sel.value='corporal'; toggleFundModalidad(); }
+    },50);
+  }
+
+  openModal('modal-fund');
+}
+
+function toggleFundModalidad(){
+  const val=document.getElementById('fund-modalidad')?.value;
+  document.getElementById('fund-param-peso').style.display=val==='peso'?'block':'none';
+  document.getElementById('fund-param-corporal').style.display=val==='corporal'?'block':'none';
+}
+
+async function saveFund(){
+  const fecha=document.getElementById('fund-fecha').value;
+  if(!fecha){showToast('⚠️ Pon la fecha');return;}
+  const mov=MOVIMIENTOS[activeFundTab];
+  
+  const series=[];
+  for(let i=0;i<10;i++){
+    const v=parseInt(document.getElementById('fund-s'+i)?.value)||0;
+    if(v>0) series.push({reps:v});
+  }
+  if(!series.length){showToast('⚠️ Registra al menos una serie');return;}
+
+  let goma=null,peso_kg=null,variacion=null;
+  if(mov.tipo==='goma'){
+    goma=document.getElementById('fund-goma')?.value||null;
+  } else if(mov.tipo==='peso'){
+    peso_kg=parseFloat(document.getElementById('fund-peso')?.value)||null;
+  } else if(mov.tipo==='mixto'){
+    const modalidad=document.getElementById('fund-modalidad')?.value;
+    if(modalidad==='peso') peso_kg=parseFloat(document.getElementById('fund-peso')?.value)||null;
+    else variacion=document.getElementById('fund-variacion')?.value||null;
+  }
+
+  const notas=document.getElementById('fund-notas')?.value?.trim()||'';
+  const btn=document.getElementById('btn-save-fund');
+  btn.textContent='Guardando...';btn.disabled=true;
+  try{
+    const [saved]=await sbPost('fundamentales',{
+      cliente_id:currentUser.id,fecha,
+      movimiento:activeFundTab,
+      goma,peso_kg,variacion,series,notas
+    });
+    if(!fundamentalesData[activeFundTab]) fundamentalesData[activeFundTab]=[];
+    fundamentalesData[activeFundTab].unshift(saved);
+    closeModal('modal-fund');
+    renderFund();
+    // Check if 10x3 completed
+    if(series.length>=10&&series.every(s=>s.reps>=3)){
+      setTimeout(()=>showToast('🎉 ¡10×3 completado! Es hora de progresar'),500);
+    } else {
+      showToast('✅ Sesión guardada');
+    }
+  }catch(e){showToast('❌ Error al guardar');console.error(e);}
+  finally{btn.textContent='Guardar';btn.disabled=false;}
+}
+
 
 // AUTO-LOGIN
 (async()=>{
