@@ -540,7 +540,7 @@ function renderTabla() {
     if(last){
       const sets=(last.series||[]).filter(s=>s.reps>0);
       const sText=sets.map(s=>`${s.reps}r${s.kg?' @'+s.kg+'kg':''}`).join(' · ');
-      lastHtml=`<div class="ex-last">Última (${formatDateShort(last.fecha)}): <strong>${sText}</strong></div>`;
+      lastHtml=`<div class="ex-last">Última (${formatDateShort(last.fecha)}): <strong>${sText}</strong>${last.nota?' · 📝'+last.nota:''}</div>`;
     }
     const row=document.createElement('div'); row.className='ex-row';
     row.innerHTML=`<div class="ex-num">${idx+1}</div>
@@ -628,6 +628,8 @@ function renderSessionForm() {
           <input type="number" class="form-input" id="kg_${eIdx}_${s}" placeholder="0" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="saveDraft()" value="${lastKg}"></div>
       </div>`;
     }
+    // Get last nota for this exercise
+    const lastNota = last?.nota || '';
     const block=document.createElement('div'); block.className='sess-ex-block';
     block.innerHTML=`<div class="sess-ex-title">${ex.nombre}</div>
       <div class="sess-ex-sub">${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · '+ex.notas:''}</div>
@@ -639,6 +641,13 @@ function renderSessionForm() {
           <button type="button" class="sens-btn" onclick="setSens(${eIdx},'normal',this)">😐 Normal</button>
           <button type="button" class="sens-btn" onclick="setSens(${eIdx},'duro',this)">😤 Duro</button>
         </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas / Anotaciones</label>
+        <textarea class="form-input" id="nota_${eIdx}" rows="2"
+          style="font-size:14px;padding:10px 12px;resize:none"
+          placeholder="Tiempo, altura, observaciones..."
+          oninput="saveDraft()">${lastNota}</textarea>
       </div>`;
     body.appendChild(block);
   });
@@ -669,7 +678,8 @@ function saveDraft(){
       series.push({reps,kg});
     }
     const sensBtn = document.querySelector('#sens_'+eIdx+' [data-sel]');
-    entries.push({ejercicio:ex.nombre, series, sensacion:sensBtn?.dataset.sel||null});
+    const notaVal = document.getElementById('nota_'+eIdx)?.value || '';
+    entries.push({ejercicio:ex.nombre, series, sensacion:sensBtn?.dataset.sel||null, nota:notaVal});
   });
   localStorage.setItem(getDraftKey(), JSON.stringify({diaIdx,fecha,entries}));
 }
@@ -764,6 +774,7 @@ function viewSession(sessId){
       <div style="font-weight:700;font-size:14px;margin-bottom:4px">${e.ejercicio}</div>
       <div style="font-size:13px;color:var(--gt)">${sText}</div>
       ${feel?`<span class="feel-badge feel-${e.sensacion}">${feel}</span>`:''}
+      ${e.nota?`<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 ${e.nota}</div>`:''}
     </div>`;
   });
   document.getElementById('view-sess-body').innerHTML=html;
@@ -1041,7 +1052,13 @@ function calcStreak(){
   return max;
 }
 
-function todayISO(){ return new Date().toISOString().split('T')[0]; }
+function todayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 function formatDateShort(d){ if(!d) return'—'; return new Date(d+'T12:00:00').toLocaleDateString('es',{day:'numeric',month:'short'}); }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
