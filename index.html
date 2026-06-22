@@ -903,12 +903,12 @@ function viewSession(sessId){
   (sess.entries||[]).forEach(e=>{
     const sText=(e.series||[]).map((s,i)=>`S${i+1}: ${s.reps} reps${s.kg?' @ '+s.kg+'kg':''}`).join(' · ');
     const feel={facil:'😊 Fácil',normal:'😐 Normal',duro:'😤 Duro'}[e.sensacion]||'';
-    html+=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gm)">
-      <div style="font-weight:700;font-size:14px;margin-bottom:4px">${e.ejercicio}</div>
-      <div style="font-size:13px;color:var(--gt)">${sText}</div>
-      ${feel?`<span class="feel-badge feel-${e.sensacion}">${feel}</span>`:''}
-      "+(e.nota?'<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>':'')+"
-    </div>`;
+    html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gm)">'
+      + '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+e.ejercicio+'</div>'
+      + '<div style="font-size:13px;color:var(--gt)">'+sText+'</div>'
+      + (feel ? '<span class="feel-badge feel-'+e.sensacion+'">'+feel+'</span>' : '')
+      + (e.nota ? '<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>' : '')
+      + '</div>';
   });
   document.getElementById('view-sess-body').innerHTML=html;
   document.getElementById('btn-del-sess').onclick=()=>deleteSession(sessId);
@@ -971,24 +971,27 @@ function renderProg(){
     }).join('');
     const progEx=(activeCiclo?.programa||[]).flatMap(d=>d.ejercicios).find(e=>e.nombre===exName);
     const card=document.createElement('div'); card.className='prog-card';
-    card.innerHTML=`<div class="prog-head" onclick="this.nextElementSibling.classList.toggle('open')">
-        <div>
-          <div class="prog-name">${exName}</div>
-          <div class="prog-sessions">${entries.length} sesión${entries.length!==1?'es':''} ${ds2}</div>
-          "+(progEx?'<div style="font-size:11px;color:var(--gt)">'+progEx.series+'×'+progEx.repMin+'–'+progEx.repMax+' reps</div>':'')+"
-        </div>
-        <div style="color:var(--gt);font-size:20px">›</div>
-      </div>
-      <div class="prog-body">
-        <div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${hasKg?'Peso máximo':'Reps medias'} — últimas ${Math.min(points.length,8)} sesiones</div>
-        <div class="mini-chart">${bars}</div>
-        <div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px;margin-bottom:12px">Verde=fácil · Granate=normal · Rojo=duro</div>
-        ${points.slice(-5).reverse().map(p=>{
-          const e2=entries.find(e=>e.fecha===p.fecha);
-          const sText=(e2?.series||[]).filter(s=>s.reps>0).map((s,i)=>`S${i+1}:${s.reps}r${s.kg?' '+s.kg+'kg':''}`).join(' ');
-          return`<div class="hist-row"><span style="color:var(--gt)">${formatDateShort(p.fecha)}</span><span>${sText}</span></div>`;
-        }).join('')}
-      </div>`;
+    var progExHtml = progEx ? '<div style="font-size:11px;color:var(--gt)">'+progEx.series+'×'+progEx.repMin+'–'+progEx.repMax+' reps</div>' : '';
+    var chartLabel = hasKg ? 'Peso máximo' : 'Reps medias';
+    var histRows = points.slice(-5).reverse().map(function(p){
+      var e2=entries.find(function(e){return e.fecha===p.fecha;});
+      var sText=(e2&&e2.series||[]).filter(function(s){return s.reps>0;}).map(function(s,i){return 'S'+(i+1)+':'+s.reps+'r'+(s.kg?' '+s.kg+'kg':'');}).join(' ');
+      return '<div class="hist-row"><span style="color:var(--gt)">'+formatDateShort(p.fecha)+'</span><span>'+sText+'</span></div>';
+    }).join('');
+    card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle('open')">'
+      + '<div>'
+      + '<div class="prog-name">'+exName+'</div>'
+      + '<div class="prog-sessions">'+entries.length+' sesión'+(entries.length!==1?'es':'')+' '+ds2+'</div>'
+      + progExHtml
+      + '</div>'
+      + '<div style="color:var(--gt);font-size:20px">›</div>'
+      + '</div>'
+      + '<div class="prog-body">'
+      + '<div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'+chartLabel+' — últimas '+Math.min(points.length,8)+' sesiones</div>'
+      + '<div class="mini-chart">'+bars+'</div>'
+      + '<div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px;margin-bottom:12px">Verde=fácil · Granate=normal · Rojo=duro</div>'
+      + histRows
+      + '</div>';
     content.appendChild(card);
   });
 }
