@@ -978,7 +978,7 @@ function renderProg(){
       var sText=(e2&&e2.series||[]).filter(function(s){return s.reps>0;}).map(function(s,i){return 'S'+(i+1)+':'+s.reps+'r'+(s.kg?' '+s.kg+'kg':'');}).join(' ');
       return '<div class="hist-row"><span style="color:var(--gt)">'+formatDateShort(p.fecha)+'</span><span>'+sText+'</span></div>';
     }).join('');
-    card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle('open')">'
+    card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle(\'open\')">'
       + '<div>'
       + '<div class="prog-name">'+exName+'</div>'
       + '<div class="prog-sessions">'+entries.length+' sesión'+(entries.length!==1?'es':'')+' '+ds2+'</div>'
