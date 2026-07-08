@@ -48,8 +48,9 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .header-sub{font-size:10px;color:var(--gt);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
 .header-badge{background:var(--granate);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px}
 /* ── NAV ── */
-.nav{position:fixed;bottom:0;left:0;right:0;background:var(--gd);border-top:1px solid var(--gl);display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom,8px);z-index:100}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 20px;background:none;border:none;cursor:pointer;color:var(--gt);font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;transition:color .2s}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--gd);border-top:1px solid var(--gl);display:flex;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 env(safe-area-inset-bottom,8px);z-index:100}
+.nav::-webkit-scrollbar{display:none}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 14px;flex:0 0 auto;background:none;border:none;cursor:pointer;color:var(--gt);font-family:'Barlow',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;transition:color .2s;min-width:60px}
 .nav-btn.active{color:var(--granate)}
 .nav-btn svg{width:22px;height:22px}
 /* ── SCREENS ── */
@@ -189,6 +190,35 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .info-box{background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:10px 12px;margin:0 14px 10px;font-size:12px;color:var(--gt);line-height:1.5}
 .info-box strong{color:var(--cream)}
 
+
+/* ── CRONÓMETRO ── */
+.crono-display{text-align:center;padding:32px 20px 20px}
+.crono-phase{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.crono-time{font-family:'Bebas Neue',sans-serif;font-size:96px;line-height:1;letter-spacing:-2px;transition:color .3s}
+.crono-time.work{color:var(--green)}
+.crono-time.rest{color:var(--yellow)}
+.crono-time.countdown{color:var(--cream)}
+.crono-time.done{color:var(--granate)}
+.crono-round{font-size:14px;color:var(--gt);margin-top:8px;font-weight:600}
+.crono-bar-wrap{height:8px;background:var(--gl);margin:0 20px;border-radius:4px;overflow:hidden}
+.crono-bar{height:100%;border-radius:4px;transition:width .1s linear,background .3s}
+.crono-controls{display:flex;gap:10px;padding:20px}
+.crono-btn{flex:1;padding:16px;border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:all .15s}
+.crono-btn:active{transform:scale(.96)}
+.crono-btn-start{background:var(--green);color:#fff}
+.crono-btn-stop{background:var(--red);color:#fff}
+.crono-btn-reset{background:var(--gl);color:var(--cream)}
+.crono-config{padding:0 14px}
+.crono-presets{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;scrollbar-width:none}
+.crono-presets::-webkit-scrollbar{display:none}
+.crono-preset{flex:0 0 auto;padding:8px 14px;border-radius:16px;border:1.5px solid var(--gl);background:none;color:var(--gt);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.crono-preset.active{border-color:var(--granate);color:var(--cream);background:rgba(151,39,46,.15)}
+.rounds-control{display:flex;align-items:center;justify-content:space-between;background:var(--gd);border-radius:10px;padding:12px 14px;margin:0 14px 10px}
+.rounds-label{font-size:13px;color:var(--gt);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.rounds-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--cream)}
+.rounds-btns{display:flex;gap:8px}
+.rounds-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--gl);color:var(--cream);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
 /* ── SEPARADOR ── */
 .sep{height:1px;background:var(--gl);margin:12px 0}
 </style>
@@ -325,6 +355,65 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     <div id="fund-content"></div>
   </div>
 
+
+  <!-- CRONÓMETRO -->
+  <div class="screen" id="screen-crono">
+    <div class="header">
+      <div class="header-info">
+        <div class="header-title">Cronómetro</div>
+        <div class="header-sub">Intervalos de trabajo y descanso</div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="crono-presets" id="crono-presets">
+      <button class="crono-preset" onclick="applyPreset(20,10,8,this)">Tábata 20/10</button>
+      <button class="crono-preset" onclick="applyPreset(30,20,6,this)">30/20 · 6r</button>
+      <button class="crono-preset" onclick="applyPreset(40,20,6,this)">40/20 · 6r</button>
+      <button class="crono-preset" onclick="applyPreset(45,15,4,this)">45/15 · 4r</button>
+      <button class="crono-preset" onclick="applyPreset(60,30,4,this)">60/30 · 4r</button>
+    </div>
+
+    <!-- Config -->
+    <div class="crono-config">
+      <div class="form-row" style="margin-bottom:10px">
+        <div class="form-group">
+          <label class="form-label">Trabajo (seg)</label>
+          <input type="number" class="form-input" id="crono-work" value="20" min="1" max="300" inputmode="numeric" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px" oninput="cronoReset()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descanso (seg)</label>
+          <input type="number" class="form-input" id="crono-rest" value="10" min="1" max="300" inputmode="numeric" style="text-align:center;font-family:'Bebas Neue',sans-serif;font-size:24px" oninput="cronoReset()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Rounds -->
+    <div class="rounds-control">
+      <div>
+        <div class="rounds-label">Rondas</div>
+        <div class="rounds-val" id="crono-rounds-display">8</div>
+      </div>
+      <div class="rounds-btns">
+        <button class="rounds-btn" onclick="changeRounds(-1)">−</button>
+        <button class="rounds-btn" onclick="changeRounds(1)">+</button>
+      </div>
+    </div>
+    <input type="hidden" id="crono-rounds" value="8">
+
+    <!-- Display -->
+    <div class="crono-display">
+      <div class="crono-phase" id="crono-phase" style="color:var(--gt)">Listo</div>
+      <div class="crono-time countdown" id="crono-time">GO</div>
+      <div class="crono-round" id="crono-round">Ronda 0 / 0</div>
+    </div>
+    <div class="crono-bar-wrap"><div class="crono-bar" id="crono-bar" style="width:100%;background:var(--granate)"></div></div>
+    <div class="crono-controls">
+      <button class="crono-btn crono-btn-start" id="crono-btn-main" onclick="cronoToggle()">▶ Iniciar</button>
+      <button class="crono-btn crono-btn-reset" onclick="cronoReset()" style="flex:0 0 80px">↺</button>
+    </div>
+  </div>
+
   <!-- NAV -->
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('tabla',this)">
@@ -339,7 +428,11 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Progresión
     </button>
-    <button class="nav-btn" onclick="showScreen('eval',this)">
+    <button class="nav-btn" onclick="showScreen('crono',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Crono
+    </button>
+        <button class="nav-btn" onclick="showScreen('eval',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Eval
     </button>
@@ -626,6 +719,7 @@ function showScreen(name, btn) {
   if(name==='prog')   renderProg();
   if(name==='eval')   renderEval();
   if(name==='fund')   renderFund();
+  if(name==='crono')  cronoReset();
   if(name==='admin')  renderAdmin();
 }
 
@@ -1208,6 +1302,237 @@ function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+
+
+// ═══════════════════════════════════════════════
+// CRONÓMETRO
+// ═══════════════════════════════════════════════
+var cronoTimer = null;
+var cronoState = 'idle'; // idle | countdown | work | rest | done
+var cronoSecondsLeft = 0;
+var cronoTotalSeconds = 0;
+var cronoCurrentRound = 0;
+var cronoTotalRounds = 8;
+var cronoAudioCtx = null;
+
+function getCronoAudio() {
+  if (!cronoAudioCtx) {
+    try { cronoAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return cronoAudioCtx;
+}
+
+function beep(freq, dur, vol) {
+  var ctx = getCronoAudio();
+  if (!ctx) return;
+  try {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = freq || 880;
+    g.gain.value = vol || 0.3;
+    o.start();
+    o.stop(ctx.currentTime + (dur || 0.15));
+  } catch(e) {}
+}
+
+function beepWork()  { beep(880, 0.12, 0.3); setTimeout(function(){ beep(880, 0.12, 0.3); }, 150); }
+function beepRest()  { beep(440, 0.25, 0.3); }
+function beepEnd()   { beep(660, 0.1, 0.3); setTimeout(function(){ beep(880, 0.1, 0.3); }, 120); setTimeout(function(){ beep(1100, 0.3, 0.3); }, 240); }
+function beepTick()  { beep(660, 0.05, 0.15); }
+
+function applyPreset(work, rest, rounds, btn) {
+  document.getElementById('crono-work').value = work;
+  document.getElementById('crono-rest').value = rest;
+  document.getElementById('crono-rounds').value = rounds;
+  document.getElementById('crono-rounds-display').textContent = rounds;
+  document.querySelectorAll('.crono-preset').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  cronoReset();
+}
+
+function changeRounds(delta) {
+  var el = document.getElementById('crono-rounds');
+  var val = Math.max(1, Math.min(99, parseInt(el.value) + delta));
+  el.value = val;
+  document.getElementById('crono-rounds-display').textContent = val;
+  cronoReset();
+}
+
+function cronoReset() {
+  clearInterval(cronoTimer);
+  cronoTimer = null;
+  cronoState = 'idle';
+  cronoCurrentRound = 0;
+  var timeEl = document.getElementById('crono-time');
+  var phaseEl = document.getElementById('crono-phase');
+  var roundEl = document.getElementById('crono-round');
+  var barEl = document.getElementById('crono-bar');
+  var btnEl = document.getElementById('crono-btn-main');
+  timeEl.textContent = 'GO';
+  timeEl.className = 'crono-time countdown';
+  phaseEl.textContent = 'Listo';
+  phaseEl.style.color = 'var(--gt)';
+  cronoTotalRounds = parseInt(document.getElementById('crono-rounds').value) || 8;
+  roundEl.textContent = 'Ronda 0 / ' + cronoTotalRounds;
+  barEl.style.width = '100%';
+  barEl.style.background = 'var(--granate)';
+  btnEl.textContent = '▶ Iniciar';
+  btnEl.className = 'crono-btn crono-btn-start';
+}
+
+function cronoToggle() {
+  if (cronoState === 'idle' || cronoState === 'done') {
+    // Start with 10s countdown
+    getCronoAudio(); // unlock audio on user gesture
+    startCountdown();
+  } else if (cronoState === 'paused') {
+    resumeCrono();
+  } else {
+    pauseCrono();
+  }
+}
+
+function pauseCrono() {
+  clearInterval(cronoTimer);
+  cronoTimer = null;
+  var prevState = cronoState;
+  cronoState = 'paused';
+  var btnEl = document.getElementById('crono-btn-main');
+  btnEl.textContent = '▶ Continuar';
+  btnEl.className = 'crono-btn crono-btn-start';
+}
+
+function resumeCrono() {
+  if (cronoState !== 'paused') return;
+  // Determine what phase we were in based on display
+  var phase = document.getElementById('crono-phase').textContent;
+  if (phase === 'CUENTA ATRÁS') {
+    cronoState = 'countdown';
+  } else if (phase === 'TRABAJO') {
+    cronoState = 'work';
+  } else {
+    cronoState = 'rest';
+  }
+  var btnEl = document.getElementById('crono-btn-main');
+  btnEl.textContent = '⏸ Pausar';
+  btnEl.className = 'crono-btn crono-btn-stop';
+  runTick();
+}
+
+function startCountdown() {
+  cronoState = 'countdown';
+  cronoSecondsLeft = 10;
+  cronoTotalRounds = parseInt(document.getElementById('crono-rounds').value) || 8;
+  cronoCurrentRound = 0;
+  var btnEl = document.getElementById('crono-btn-main');
+  btnEl.textContent = '⏸ Pausar';
+  btnEl.className = 'crono-btn crono-btn-stop';
+  updateCronoDisplay();
+  runTick();
+}
+
+function runTick() {
+  cronoTimer = setInterval(function() {
+    if (cronoState === 'paused') { clearInterval(cronoTimer); return; }
+    cronoSecondsLeft--;
+    if (cronoSecondsLeft <= 3 && cronoSecondsLeft > 0) beepTick();
+    if (cronoSecondsLeft <= 0) {
+      // Transition
+      if (cronoState === 'countdown') {
+        startPhase('work');
+      } else if (cronoState === 'work') {
+        if (cronoCurrentRound >= cronoTotalRounds) {
+          finishCrono();
+        } else {
+          startPhase('rest');
+        }
+      } else if (cronoState === 'rest') {
+        startPhase('work');
+      }
+      return;
+    }
+    updateCronoDisplay();
+  }, 1000);
+}
+
+function startPhase(phase) {
+  clearInterval(cronoTimer);
+  cronoTimer = null;
+  var work = parseInt(document.getElementById('crono-work').value) || 20;
+  var rest = parseInt(document.getElementById('crono-rest').value) || 10;
+  if (phase === 'work') {
+    cronoCurrentRound++;
+    if (cronoCurrentRound > cronoTotalRounds) { finishCrono(); return; }
+    cronoState = 'work';
+    cronoSecondsLeft = work;
+    cronoTotalSeconds = work;
+    beepWork();
+  } else {
+    cronoState = 'rest';
+    cronoSecondsLeft = rest;
+    cronoTotalSeconds = rest;
+    beepRest();
+  }
+  updateCronoDisplay();
+  runTick();
+}
+
+function finishCrono() {
+  clearInterval(cronoTimer);
+  cronoState = 'done';
+  beepEnd();
+  var timeEl = document.getElementById('crono-time');
+  var phaseEl = document.getElementById('crono-phase');
+  var btnEl = document.getElementById('crono-btn-main');
+  var barEl = document.getElementById('crono-bar');
+  timeEl.textContent = '✓';
+  timeEl.className = 'crono-time done';
+  phaseEl.textContent = '¡COMPLETADO!';
+  phaseEl.style.color = 'var(--green)';
+  barEl.style.width = '100%';
+  barEl.style.background = 'var(--green)';
+  btnEl.textContent = '↺ Repetir';
+  btnEl.className = 'crono-btn crono-btn-start';
+}
+
+function updateCronoDisplay() {
+  var timeEl = document.getElementById('crono-time');
+  var phaseEl = document.getElementById('crono-phase');
+  var roundEl = document.getElementById('crono-round');
+  var barEl = document.getElementById('crono-bar');
+  var work = parseInt(document.getElementById('crono-work').value) || 20;
+  var rest = parseInt(document.getElementById('crono-rest').value) || 10;
+
+  timeEl.textContent = cronoSecondsLeft;
+
+  if (cronoState === 'countdown') {
+    phaseEl.textContent = 'CUENTA ATRÁS';
+    phaseEl.style.color = 'var(--cream)';
+    timeEl.className = 'crono-time countdown';
+    var pct = Math.round((cronoSecondsLeft / 10) * 100);
+    barEl.style.width = pct + '%';
+    barEl.style.background = 'var(--granate)';
+    roundEl.textContent = 'Prepárate · ' + cronoTotalRounds + ' rondas de ' + work + 's/' + rest + 's';
+  } else if (cronoState === 'work') {
+    phaseEl.textContent = 'TRABAJO';
+    phaseEl.style.color = 'var(--green)';
+    timeEl.className = 'crono-time work';
+    var pct = Math.round((cronoSecondsLeft / work) * 100);
+    barEl.style.width = pct + '%';
+    barEl.style.background = 'var(--green)';
+    roundEl.textContent = 'Ronda ' + cronoCurrentRound + ' / ' + cronoTotalRounds;
+  } else if (cronoState === 'rest') {
+    phaseEl.textContent = 'DESCANSO';
+    phaseEl.style.color = 'var(--yellow)';
+    timeEl.className = 'crono-time rest';
+    var pct = Math.round((cronoSecondsLeft / rest) * 100);
+    barEl.style.width = pct + '%';
+    barEl.style.background = 'var(--yellow)';
+    roundEl.textContent = 'Ronda ' + cronoCurrentRound + ' / ' + cronoTotalRounds + ' · Siguiente: TRABAJO';
+  }
 }
 
 
