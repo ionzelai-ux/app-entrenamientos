@@ -17,6 +17,7 @@
   --granate:#97272E;--granate-d:#6e1b21;--granate-l:#c0343d;
   --black:#0d0d0d;--gd:#1a1a1a;--gm:#242424;--gl:#333;
   --gt:#888;--cream:#F8F1E3;--green:#3aad6e;--yellow:#e8a020;--red:#d03030;
+  --bebas:'Bebas Neue',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);min-height:100vh;overflow-x:hidden}
@@ -806,7 +807,7 @@ function openNewSession() {
     try {
       const draft = JSON.parse(raw);
       sel.value = draft.diaIdx;
-      document.getElementById('sess-date').value = draft.fecha;
+      document.getElementById('sess-date').value = todayISO();
       renderSessionForm();
       draft.entries.forEach((entry,eIdx)=>{
         (entry.series||[]).forEach((s,sIdx)=>{
@@ -912,7 +913,7 @@ function saveDraft(){
     const notaVal = document.getElementById('nota_'+eIdx)?.value || '';
     entries.push({ejercicio:ex.nombre, series, sensacion:sensBtn?.dataset.sel||null, nota:notaVal});
   });
-  localStorage.setItem(getDraftKey(), JSON.stringify({diaIdx,fecha,entries}));
+  localStorage.setItem(getDraftKey(), JSON.stringify({diaIdx,entries}));
 }
 
 function loadDraft(){ /* inlined in openNewSession */ }
@@ -1040,7 +1041,7 @@ function renderProg(){
   const content=document.getElementById('prog-content');
   content.innerHTML='';
   if(!allEx.size){
-    content.innerHTML=`<div class="empty"><div class="empty-icon">📈</div><h3>Sin datos</h3><p>Registra sesiones para ver tu progresión</p></div>`;
+    content.innerHTML='<div class="empty"><div class="empty-icon">📈</div><h3>Sin datos</h3><p>Registra sesiones para ver tu progresión</p></div>';
     return;
   }
   allEx.forEach(exName=>{
@@ -1049,47 +1050,110 @@ function renderProg(){
       .flatMap(s=>(s.entries||[]).filter(e=>e.ejercicio===exName).map(e=>({fecha:s.fecha,...e})))
       .sort((a,b)=>a.fecha.localeCompare(b.fecha));
     if(!entries.length) return;
+
+    // Build points: total reps and avg kg per session
     const points=entries.map(e=>{
       const sets=(e.series||[]).filter(s=>s.reps>0);
-      const maxKg=Math.max(...sets.map(s=>s.kg||0),0);
-      const avgR=sets.length?sets.reduce((a,s)=>a+s.reps,0)/sets.length:0;
-      return{fecha:e.fecha,maxKg,avgR:Math.round(avgR),feel:e.sensacion};
+      const totalReps=sets.reduce((a,s)=>a+(s.reps||0),0);
+      const avgKg=sets.length&&sets.some(s=>s.kg>0) ? Math.round(sets.reduce((a,s)=>a+(s.kg||0),0)/sets.length*10)/10 : 0;
+      return{fecha:e.fecha,totalReps,avgKg,feel:e.sensacion};
     });
-    const hasKg=points.some(p=>p.maxKg>0);
-    const maxVal=Math.max(...points.map(p=>hasKg?p.maxKg:p.avgR),1);
-    const last=points[points.length-1],first=points[0];
-    const delta=hasKg?last.maxKg-first.maxKg:last.avgR-first.avgR;
-    const dc=delta>0?'var(--green)':delta<0?'var(--red)':'var(--gt)';
-    const ds2=delta!==0?`<span style="color:${dc}">${delta>0?'+':''}${delta}${hasKg?'kg':'r'}</span>`:'';
-    const bars=points.slice(-8).map(p=>{
-      const h=Math.max(Math.round(((hasKg?p.maxKg:p.avgR)/maxVal)*100),5);
-      const v=hasKg?p.maxKg+'kg':p.avgR+'r';
-      const c={facil:'var(--green)',normal:'var(--granate)',duro:'var(--red)'}[p.feel]||'var(--granate)';
-      return`<div class="mini-bar" style="height:${h}%;background:${c}" data-val="${v}"></div>`;
-    }).join('');
+
+    const hasKg=points.some(p=>p.avgKg>0);
+    const last=points[points.length-1];
+    const first=points[0];
+    const deltaReps=last.totalReps-first.totalReps;
+    const deltaKg=hasKg?last.avgKg-first.avgKg:0;
     const progEx=(activeCiclo?.programa||[]).flatMap(d=>d.ejercicios).find(e=>e.nombre===exName);
+
+    // Delta badges
+    var deltaBadges='';
+    if(deltaReps!==0){
+      var rc=deltaReps>0?'var(--green)':'var(--red)';
+      deltaBadges+='<span style="color:'+rc+';font-size:11px;font-weight:700">'+(deltaReps>0?'+':'')+deltaReps+' reps</span> ';
+    }
+    if(hasKg&&deltaKg!==0){
+      var kc=deltaKg>0?'var(--green)':'var(--red)';
+      deltaBadges+='<span style="color:'+kc+';font-size:11px;font-weight:700">'+(deltaKg>0?'+':'')+deltaKg+'kg</span>';
+    }
+
+    // Build dual-line SVG chart
+    var chartPts=points.slice(-10);
+    var maxReps=Math.max.apply(null,chartPts.map(function(p){return p.totalReps;}))||1;
+    var maxKg=hasKg?Math.max.apply(null,chartPts.map(function(p){return p.avgKg;}))||1:1;
+    var W=300,H=80,pad=8;
+    var n=chartPts.length;
+
+    function px(i){ return n<2 ? W/2 : pad + i*(W-pad*2)/(n-1); }
+    function pyReps(v){ return H-pad - (v/maxReps)*(H-pad*2); }
+    function pyKg(v){ return H-pad - (v/maxKg)*(H-pad*2); }
+
+    // Reps line (granate)
+    var repsPoints=chartPts.map(function(p,i){return px(i)+','+pyReps(p.totalReps);}).join(' ');
+    // Kg line (yellow) - only if has kg
+    var kgLine='';
+    if(hasKg){
+      var kgPoints=chartPts.map(function(p,i){return px(i)+','+pyKg(p.avgKg);}).join(' ');
+      kgLine='<polyline points="'+kgPoints+'" fill="none" stroke="#e8a020" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      // Dots for kg
+      chartPts.forEach(function(p,i){
+        kgLine+='<circle cx="'+px(i)+'" cy="'+pyKg(p.avgKg)+'" r="3" fill="#e8a020"/>';
+      });
+    }
+    // Reps dots + feel color
+    var repsDots='';
+    var feelColors={facil:'#3aad6e',normal:'#97272E',duro:'#d03030'};
+    chartPts.forEach(function(p,i){
+      var fc=feelColors[p.feel]||'#97272E';
+      repsDots+='<circle cx="'+px(i)+'" cy="'+pyReps(p.totalReps)+'" r="4" fill="'+fc+'"/>';
+    });
+
+    // Last values
+    var lastReps=last.totalReps;
+    var lastKg=hasKg?last.avgKg:null;
+
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:80px;display:block">'
+      +'<polyline points="'+repsPoints+'" fill="none" stroke="#97272E" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+      +repsDots+kgLine
+      +'</svg>';
+
+    // Legend
+    var legend='<div style="display:flex;gap:16px;padding:0 14px 8px;font-size:11px;font-weight:700">'
+      +'<span><span style="display:inline-block;width:12px;height:3px;background:var(--granate);vertical-align:middle;margin-right:4px;border-radius:2px"></span>Reps totales</span>'
+      +(hasKg?'<span><span style="display:inline-block;width:12px;height:3px;background:var(--yellow);vertical-align:middle;margin-right:4px;border-radius:2px"></span>Kg medio</span>':'')
+      +'<span style="color:var(--gt)">Punto: 😊verde 😐granate 😤rojo</span>'
+      +'</div>';
+
+    // Last session data
+    var lastRow='<div style="display:flex;gap:16px;padding:8px 14px;background:rgba(255,255,255,.03);border-radius:8px;margin:0 14px 12px">'
+      +'<div style="text-align:center"><div class="stat-val" style="color:var(--granate)">'+lastReps+'</div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Reps última</div></div>'
+      +(hasKg?'<div style="text-align:center"><div class="stat-val" style="color:var(--yellow)">'+lastKg+'<span style="font-size:14px">kg</span></div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Kg última</div></div>':'')
+      +'<div style="text-align:center"><div class="stat-val" style="color:var(--cream)">'+points.length+'</div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Sesiones</div></div>'
+      +'</div>';
+
     const card=document.createElement('div'); card.className='prog-card';
-    var progExHtml = progEx ? '<div style="font-size:11px;color:var(--gt)">'+progEx.series+'×'+progEx.repMin+'–'+progEx.repMax+' reps</div>' : '';
-    var chartLabel = hasKg ? 'Peso máximo' : 'Reps medias';
+    var progExHtml = progEx ? '<div style="font-size:11px;color:var(--gt)">'+progEx.series+'x'+progEx.repMin+'-'+progEx.repMax+' reps</div>' : '';
     var histRows = points.slice(-5).reverse().map(function(p){
       var e2=entries.find(function(e){return e.fecha===p.fecha;});
       var sText=(e2&&e2.series||[]).filter(function(s){return s.reps>0;}).map(function(s,i){return 'S'+(i+1)+':'+s.reps+'r'+(s.kg?' '+s.kg+'kg':'');}).join(' ');
       return '<div class="hist-row"><span style="color:var(--gt)">'+formatDateShort(p.fecha)+'</span><span>'+sText+'</span></div>';
     }).join('');
-    card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle(\'open\')">'
+    card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle(&quot;open&quot;)">'
       + '<div>'
       + '<div class="prog-name">'+exName+'</div>'
-      + '<div class="prog-sessions">'+entries.length+' sesión'+(entries.length!==1?'es':'')+' '+ds2+'</div>'
+      + '<div class="prog-sessions">'+entries.length+' sesion'+(entries.length!==1?'es':'')+' '+deltaBadges+'</div>'
       + progExHtml
       + '</div>'
       + '<div style="color:var(--gt);font-size:20px">›</div>'
       + '</div>'
       + '<div class="prog-body">'
-      + '<div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'+chartLabel+' — últimas '+Math.min(points.length,8)+' sesiones</div>'
-      + '<div class="mini-chart">'+bars+'</div>'
-      + '<div style="font-size:10px;color:var(--gt);text-align:center;margin-top:22px;margin-bottom:12px">Verde=fácil · Granate=normal · Rojo=duro</div>'
+      + lastRow
+      + '<div style="padding:0 14px 4px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Evolucion — ultimas '+Math.min(points.length,10)+' sesiones</div>'
+      + '<div style="padding:0 14px 8px">'+svg+'</div>'
+      + legend
+      + '<div style="padding:0 14px"><div style="font-size:12px;color:var(--gt);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ultimas sesiones</div>'
       + histRows
-      + '</div>';
+      + '</div></div>';
     content.appendChild(card);
   });
 }
