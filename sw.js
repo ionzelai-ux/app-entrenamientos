@@ -1,36 +1,62 @@
-// CODEK Training Service Worker
-const CACHE = 'codek-v1';
-const ASSETS = [
-  '/app-entrenamientos/',
-  '/app-entrenamientos/index.html',
-  '/app-entrenamientos/manifest.json',
-  '/app-entrenamientos/icon-192.png',
-  '/app-entrenamientos/icon-512.png'
-];
+// CODEK Training Service Worker - v2 (network-first)
+const CACHE = 'codek-v2-' + Date.now();
 
 self.addEventListener('install', function(e){
-  e.waitUntil(
-    caches.open(CACHE).then(function(c){ return c.addAll(ASSETS); })
-  );
+  // Activate new SW immediately, don't wait for old one to finish
   self.skipWaiting();
 });
 
 self.addEventListener('activate', function(e){
+  // Delete ALL old caches
   e.waitUntil(
     caches.keys().then(function(keys){
-      return Promise.all(keys.filter(function(k){ return k!==CACHE; }).map(function(k){ return caches.delete(k); }));
+      return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+    }).then(function(){
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', function(e){
-  // Network first for Supabase, cache first for assets
-  if(e.request.url.includes('supabase.co')){
-    e.respondWith(fetch(e.request).catch(function(){ return caches.match(e.request); }));
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(function(r){ return r || fetch(e.request); })
-    );
+  const url = e.request.url;
+  
+  // Supabase: network only, no cache
+  if(url.includes('supabase.co')){
+    e.respondWith(fetch(e.request));
+    return;
   }
+  
+  // HTML files (index.html or root): NETWORK FIRST - always try to get fresh version
+  // Fall back to cache only if offline
+  if(e.request.mode === 'navigate' || url.endsWith('.html') || url.endsWith('/')){
+    e.respondWith(
+      fetch(e.request).then(function(response){
+        // Cache the fresh version for offline fallback
+        const clone = response.clone();
+        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
+        return response;
+      }).catch(function(){
+        // Offline: use cache
+        return caches.match(e.request);
+      })
+    );
+    return;
+  }
+  
+  // Other assets (icons, manifest, fonts): cache first for speed
+  e.respondWith(
+    caches.match(e.request).then(function(cached){
+      if(cached) return cached;
+      return fetch(e.request).then(function(response){
+        const clone = response.clone();
+        caches.open(CACHE).then(function(cache){ cache.put(e.request, clone); });
+        return response;
+      });
+    })
+  );
+});
+
+// Listen for skip waiting message from the page
+self.addEventListener('message', function(event){
+  if(event.data === 'skipWaiting') self.skipWaiting();
 });
