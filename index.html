@@ -1105,7 +1105,12 @@ function renderProg(){
           var y=pyKg(p.avgKg);
           var h=H-padBottom-y;
           bars+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+h+'" fill="#e8a020" opacity="0.7" rx="2"/>';
-          bars+='<text x="'+px(i)+'" y="'+(y-3)+'" text-anchor="middle" fill="#e8a020" font-size="9" font-weight="700">'+p.avgKg+'</text>';
+          // Kg label INSIDE the bar at top (if bar tall enough) or below the bar
+          if(h > 14){
+            bars+='<text x="'+px(i)+'" y="'+(y+10)+'" text-anchor="middle" fill="#0d0d0d" font-size="9" font-weight="700">'+p.avgKg+'</text>';
+          } else {
+            bars+='<text x="'+px(i)+'" y="'+(y-3)+'" text-anchor="middle" fill="#e8a020" font-size="9" font-weight="700">'+p.avgKg+'</text>';
+          }
         }
       });
     }
@@ -1126,8 +1131,14 @@ function renderProg(){
     var feelColors={facil:'#3aad6e',normal:'#97272E',duro:'#d03030'};
     chartPts.forEach(function(p,i){
       var fc=feelColors[p.feel]||'#97272E';
-      repsDots+='<circle cx="'+px(i)+'" cy="'+pyReps(p.totalReps)+'" r="4" fill="'+fc+'" stroke="#0d0d0d" stroke-width="1.5"/>';
-      repsDots+='<text x="'+px(i)+'" y="'+(pyReps(p.totalReps)-8)+'" text-anchor="middle" fill="#F8F1E3" font-size="9" font-weight="700">'+p.totalReps+'</text>';
+      var cy=pyReps(p.totalReps);
+      // Add dark background rectangle behind the reps label to avoid overlap
+      var labelY = cy - 8;
+      var labelText = ''+p.totalReps;
+      var labelW = labelText.length * 6 + 4;
+      repsDots+='<rect x="'+(px(i)-labelW/2)+'" y="'+(labelY-9)+'" width="'+labelW+'" height="12" fill="#0d0d0d" rx="2" opacity="0.85"/>';
+      repsDots+='<text x="'+px(i)+'" y="'+labelY+'" text-anchor="middle" fill="#F8F1E3" font-size="9" font-weight="700">'+labelText+'</text>';
+      repsDots+='<circle cx="'+px(i)+'" cy="'+cy+'" r="4" fill="'+fc+'" stroke="#0d0d0d" stroke-width="1.5"/>';
     });
 
     // X labels (dates)
