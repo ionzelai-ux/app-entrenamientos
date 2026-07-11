@@ -1051,20 +1051,25 @@ function renderProg(){
       .sort((a,b)=>a.fecha.localeCompare(b.fecha));
     if(!entries.length) return;
 
-    // Build points: total reps and avg kg per session
+    // Points: total reps, avg kg per session, and tonnage
     const points=entries.map(e=>{
       const sets=(e.series||[]).filter(s=>s.reps>0);
       const totalReps=sets.reduce((a,s)=>a+(s.reps||0),0);
       const avgKg=sets.length&&sets.some(s=>s.kg>0) ? Math.round(sets.reduce((a,s)=>a+(s.kg||0),0)/sets.length*10)/10 : 0;
-      return{fecha:e.fecha,totalReps,avgKg,feel:e.sensacion};
+      const tonelaje=sets.reduce((a,s)=>a+((s.reps||0)*(s.kg||0)),0);
+      return{fecha:e.fecha,totalReps,avgKg,tonelaje,feel:e.sensacion};
     });
 
     const hasKg=points.some(p=>p.avgKg>0);
     const last=points[points.length-1];
     const first=points[0];
     const deltaReps=last.totalReps-first.totalReps;
-    const deltaKg=hasKg?last.avgKg-first.avgKg:0;
+    const deltaKg=hasKg?Math.round((last.avgKg-first.avgKg)*10)/10:0;
     const progEx=(activeCiclo?.programa||[]).flatMap(d=>d.ejercicios).find(e=>e.nombre===exName);
+
+    // Totals
+    const totalRepsAll=points.reduce((a,p)=>a+p.totalReps,0);
+    const daysTrained=new Set(entries.map(e=>e.fecha)).size;
 
     // Delta badges
     var deltaBadges='';
@@ -1077,67 +1082,99 @@ function renderProg(){
       deltaBadges+='<span style="color:'+kc+';font-size:11px;font-weight:700">'+(deltaKg>0?'+':'')+deltaKg+'kg</span>';
     }
 
-    // Build dual-line SVG chart
+    // SVG chart: bars=kg, line=reps, area=tonelaje
     var chartPts=points.slice(-10);
+    var n=chartPts.length;
     var maxReps=Math.max.apply(null,chartPts.map(function(p){return p.totalReps;}))||1;
     var maxKg=hasKg?Math.max.apply(null,chartPts.map(function(p){return p.avgKg;}))||1:1;
-    var W=300,H=80,pad=8;
-    var n=chartPts.length;
+    var maxTon=Math.max.apply(null,chartPts.map(function(p){return p.tonelaje;}))||1;
+    var W=320,H=100,pad=10,padBottom=18;
 
     function px(i){ return n<2 ? W/2 : pad + i*(W-pad*2)/(n-1); }
-    function pyReps(v){ return H-pad - (v/maxReps)*(H-pad*2); }
-    function pyKg(v){ return H-pad - (v/maxKg)*(H-pad*2); }
+    function pyReps(v){ return H-padBottom - (v/maxReps)*(H-padBottom-pad); }
+    function pyKg(v){ return H-padBottom - (v/maxKg)*(H-padBottom-pad); }
+    function pyTon(v){ return H-padBottom - (v/maxTon)*(H-padBottom-pad); }
+
+    // Bars for kg (only if has kg)
+    var bars='';
+    if(hasKg){
+      var barW = n<2 ? 20 : Math.min(22, (W-pad*2)/n*0.6);
+      chartPts.forEach(function(p,i){
+        if(p.avgKg>0){
+          var x=px(i)-barW/2;
+          var y=pyKg(p.avgKg);
+          var h=H-padBottom-y;
+          bars+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+h+'" fill="#e8a020" opacity="0.7" rx="2"/>';
+          bars+='<text x="'+px(i)+'" y="'+(y-3)+'" text-anchor="middle" fill="#e8a020" font-size="9" font-weight="700">'+p.avgKg+'</text>';
+        }
+      });
+    }
+
+    // Area for tonelaje (or reps if no kg)
+    var areaMetric = hasKg ? 'tonelaje' : 'totalReps';
+    var areaPy = hasKg ? pyTon : pyReps;
+    var areaPoints = chartPts.map(function(p,i){return px(i)+','+areaPy(p[areaMetric]);});
+    var areaPath = 'M'+pad+','+(H-padBottom)+' L'+areaPoints.join(' L')+' L'+px(n-1)+','+(H-padBottom)+' Z';
+    var areaEl = '<path d="'+areaPath+'" fill="url(#gradArea)" opacity="0.35"/>';
 
     // Reps line (granate)
     var repsPoints=chartPts.map(function(p,i){return px(i)+','+pyReps(p.totalReps);}).join(' ');
-    // Kg line (yellow) - only if has kg
-    var kgLine='';
-    if(hasKg){
-      var kgPoints=chartPts.map(function(p,i){return px(i)+','+pyKg(p.avgKg);}).join(' ');
-      kgLine='<polyline points="'+kgPoints+'" fill="none" stroke="#e8a020" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
-      // Dots for kg
-      chartPts.forEach(function(p,i){
-        kgLine+='<circle cx="'+px(i)+'" cy="'+pyKg(p.avgKg)+'" r="3" fill="#e8a020"/>';
-      });
-    }
-    // Reps dots + feel color
+    var repsLine='<polyline points="'+repsPoints+'" fill="none" stroke="#97272E" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+
+    // Reps dots colored by feel
     var repsDots='';
     var feelColors={facil:'#3aad6e',normal:'#97272E',duro:'#d03030'};
     chartPts.forEach(function(p,i){
       var fc=feelColors[p.feel]||'#97272E';
-      repsDots+='<circle cx="'+px(i)+'" cy="'+pyReps(p.totalReps)+'" r="4" fill="'+fc+'"/>';
+      repsDots+='<circle cx="'+px(i)+'" cy="'+pyReps(p.totalReps)+'" r="4" fill="'+fc+'" stroke="#0d0d0d" stroke-width="1.5"/>';
+      repsDots+='<text x="'+px(i)+'" y="'+(pyReps(p.totalReps)-8)+'" text-anchor="middle" fill="#F8F1E3" font-size="9" font-weight="700">'+p.totalReps+'</text>';
     });
 
-    // Last values
-    var lastReps=last.totalReps;
-    var lastKg=hasKg?last.avgKg:null;
+    // X labels (dates)
+    var xLabels='';
+    chartPts.forEach(function(p,i){
+      var d=new Date(p.fecha+'T12:00:00');
+      var lbl=d.getDate()+'/'+(d.getMonth()+1);
+      xLabels+='<text x="'+px(i)+'" y="'+(H-4)+'" text-anchor="middle" fill="#888" font-size="8">'+lbl+'</text>';
+    });
 
-    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:80px;display:block">'
-      +'<polyline points="'+repsPoints+'" fill="none" stroke="#97272E" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-      +repsDots+kgLine
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:110px;display:block">'
+      +'<defs><linearGradient id="gradArea" x1="0" x2="0" y1="0" y2="1">'
+      +'<stop offset="0%" stop-color="#c0343d" stop-opacity="0.6"/>'
+      +'<stop offset="100%" stop-color="#c0343d" stop-opacity="0.05"/>'
+      +'</linearGradient></defs>'
+      +areaEl+bars+repsLine+repsDots+xLabels
       +'</svg>';
 
     // Legend
-    var legend='<div style="display:flex;gap:16px;padding:0 14px 8px;font-size:11px;font-weight:700">'
-      +'<span><span style="display:inline-block;width:12px;height:3px;background:var(--granate);vertical-align:middle;margin-right:4px;border-radius:2px"></span>Reps totales</span>'
-      +(hasKg?'<span><span style="display:inline-block;width:12px;height:3px;background:var(--yellow);vertical-align:middle;margin-right:4px;border-radius:2px"></span>Kg medio</span>':'')
-      +'<span style="color:var(--gt)">Punto: 😊verde 😐granate 😤rojo</span>'
+    var legend='<div style="display:flex;flex-wrap:wrap;gap:12px;padding:0 14px 10px;font-size:10px;font-weight:600">'
+      +'<span><span style="display:inline-block;width:12px;height:3px;background:var(--granate);vertical-align:middle;margin-right:4px;border-radius:2px"></span>Reps</span>'
+      +(hasKg?'<span><span style="display:inline-block;width:10px;height:10px;background:#e8a020;opacity:0.7;vertical-align:middle;margin-right:4px;border-radius:2px"></span>Peso (kg)</span>':'')
+      +'<span><span style="display:inline-block;width:12px;height:10px;background:rgba(192,52,61,0.35);vertical-align:middle;margin-right:4px;border-radius:2px"></span>'+(hasKg?'Tonelaje':'Volumen')+'</span>'
+      +'<span style="color:var(--gt);font-weight:400">😊fácil 😐normal 😤duro</span>'
       +'</div>';
 
-    // Last session data
-    var lastRow='<div style="display:flex;gap:16px;padding:8px 14px;background:rgba(255,255,255,.03);border-radius:8px;margin:0 14px 12px">'
-      +'<div style="text-align:center"><div class="stat-val" style="color:var(--granate)">'+lastReps+'</div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Reps última</div></div>'
-      +(hasKg?'<div style="text-align:center"><div class="stat-val" style="color:var(--yellow)">'+lastKg+'<span style="font-size:14px">kg</span></div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Kg última</div></div>':'')
-      +'<div style="text-align:center"><div class="stat-val" style="color:var(--cream)">'+points.length+'</div><div style="font-size:10px;color:var(--gt);text-transform:uppercase">Sesiones</div></div>'
+    // Stats row
+    var statsRow='<div style="display:flex;gap:8px;padding:8px 14px 12px">'
+      +'<div style="flex:1;text-align:center;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 4px">'
+      +'<div class="stat-val" style="color:var(--granate);font-size:22px">'+totalRepsAll+'</div>'
+      +'<div style="font-size:9px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Reps totales</div></div>'
+      +'<div style="flex:1;text-align:center;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 4px">'
+      +'<div class="stat-val" style="color:var(--cream);font-size:22px">'+daysTrained+'</div>'
+      +'<div style="font-size:9px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Días entrenado</div></div>'
+      +'<div style="flex:1;text-align:center;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 4px">'
+      +'<div class="stat-val" style="color:var(--yellow);font-size:22px">'+last.totalReps+(hasKg?'<span style="font-size:12px;color:var(--gt)">/'+last.avgKg+'kg</span>':'')+'</div>'
+      +'<div style="font-size:9px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Última</div></div>'
       +'</div>';
 
-    const card=document.createElement('div'); card.className='prog-card';
     var progExHtml = progEx ? '<div style="font-size:11px;color:var(--gt)">'+progEx.series+'x'+progEx.repMin+'-'+progEx.repMax+' reps</div>' : '';
     var histRows = points.slice(-5).reverse().map(function(p){
       var e2=entries.find(function(e){return e.fecha===p.fecha;});
       var sText=(e2&&e2.series||[]).filter(function(s){return s.reps>0;}).map(function(s,i){return 'S'+(i+1)+':'+s.reps+'r'+(s.kg?' '+s.kg+'kg':'');}).join(' ');
       return '<div class="hist-row"><span style="color:var(--gt)">'+formatDateShort(p.fecha)+'</span><span>'+sText+'</span></div>';
     }).join('');
+
+    const card=document.createElement('div'); card.className='prog-card';
     card.innerHTML = '<div class="prog-head" onclick="this.nextElementSibling.classList.toggle(&quot;open&quot;)">'
       + '<div>'
       + '<div class="prog-name">'+exName+'</div>'
@@ -1147,8 +1184,8 @@ function renderProg(){
       + '<div style="color:var(--gt);font-size:20px">›</div>'
       + '</div>'
       + '<div class="prog-body">'
-      + lastRow
-      + '<div style="padding:0 14px 4px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Evolucion — ultimas '+Math.min(points.length,10)+' sesiones</div>'
+      + statsRow
+      + '<div style="padding:0 14px 4px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px">Evolucion - ultimas '+Math.min(points.length,10)+' sesiones</div>'
       + '<div style="padding:0 14px 8px">'+svg+'</div>'
       + legend
       + '<div style="padding:0 14px"><div style="font-size:12px;color:var(--gt);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ultimas sesiones</div>'
