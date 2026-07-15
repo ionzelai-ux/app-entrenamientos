@@ -597,8 +597,25 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
         <input type="number" class="form-input" id="eval-flexiones" placeholder="0" min="0" inputmode="numeric">
       </div>
     </div>
+    <div style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--granate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🎯 Dominadas</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Repeticiones</label>
+          <input type="number" class="form-input" id="eval-dom-reps" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Kg (ayuda −/lastre +)</label>
+          <input type="number" class="form-input" id="eval-dom-kg" placeholder="0" step="0.5" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Color goma / observaciones</label>
+        <input type="text" class="form-input" id="eval-dom-notas" placeholder="Ej: goma verde, sin ayuda, +5kg lastre...">
+      </div>
+    </div>
     <div class="form-group">
-      <label class="form-label">Notas</label>
+      <label class="form-label">Notas generales</label>
       <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
     </div>
     <button class="btn btn-primary" onclick="saveEval()" id="btn-save-eval">Guardar evaluación</button>
@@ -1704,6 +1721,17 @@ function renderEval(){
   html += metricRow('🦵','Sentadillas 30s',  last.sentadillas,  prev&&prev.sentadillas,  'reps');
   html += metricRow('🔁','Remos anillas 30s',last.remos,        prev&&prev.remos,        'reps');
   html += metricRow('💪','Flexiones 30s',    last.flexiones,    prev&&prev.flexiones,    'reps');
+  // Dominadas: show reps + kg info
+  if(last.dominadas_reps !== null && last.dominadas_reps !== undefined && last.dominadas_reps !== ''){
+    var kgInfo = '';
+    if(last.dominadas_kg && parseFloat(last.dominadas_kg) !== 0){
+      var kg = parseFloat(last.dominadas_kg);
+      kgInfo = kg > 0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
+    }
+    var domName = 'Dominadas'+kgInfo;
+    html += metricRow('🎯', domName, last.dominadas_reps, prev&&prev.dominadas_reps, 'reps');
+    if(last.dominadas_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">🎨 '+last.dominadas_notas+'</div>';
+  }
   if(last.notas) html += '<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 '+last.notas+'</div>';
   html += '</div>';
   box.innerHTML = html;
@@ -1717,7 +1745,7 @@ function renderEval(){
       + '<div style="display:flex;justify-content:space-between;align-items:center">'
       + '<div><div style="font-weight:700;font-size:14px">'+formatDateShort(ev.fecha)+'</div>'
       + '<div style="font-size:12px;color:var(--gt);margin-top:2px">'
-      + '⏱'+(ev.colgado_seg||'—')+'s · 🦵'+(ev.sentadillas||'—')+' · 🔁'+(ev.remos||'—')+' · 💪'+(ev.flexiones||'—')
+      + '⏱'+(ev.colgado_seg||'—')+'s · 🦵'+(ev.sentadillas||'—')+' · 🔁'+(ev.remos||'—')+' · 💪'+(ev.flexiones||'—')+' · 🎯'+(ev.dominadas_reps||'—')
       + '</div></div><div style="color:var(--gt)">›</div></div></div>';
   });
   hhtml += '</div>';
@@ -1727,7 +1755,16 @@ function renderEval(){
 function viewEval(id){
   var ev = evaluaciones.find(function(e){return e.id===id;});
   if(!ev) return;
-  alert('Evaluación '+formatDateShort(ev.fecha)+'\n\n⏱ Colgado: '+(ev.colgado_seg||'—')+'s\n🦵 Sentadillas: '+(ev.sentadillas||'—')+' reps\n🔁 Remos: '+(ev.remos||'—')+' reps\n💪 Flexiones: '+(ev.flexiones||'—')+' reps\n\n'+(ev.notas||''));
+  var domTxt = '—';
+  if(ev.dominadas_reps){
+    domTxt = ev.dominadas_reps + ' reps';
+    if(ev.dominadas_kg && parseFloat(ev.dominadas_kg) !== 0){
+      var kg = parseFloat(ev.dominadas_kg);
+      domTxt += kg > 0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
+    }
+    if(ev.dominadas_notas) domTxt += '\n     🎨 '+ev.dominadas_notas;
+  }
+  alert('Evaluación '+formatDateShort(ev.fecha)+'\n\n⏱ Colgado: '+(ev.colgado_seg||'—')+'s\n🦵 Sentadillas: '+(ev.sentadillas||'—')+' reps\n🔁 Remos: '+(ev.remos||'—')+' reps\n💪 Flexiones: '+(ev.flexiones||'—')+' reps\n🎯 Dominadas: '+domTxt+'\n\n'+(ev.notas||''));
 }
 
 function openNewEval(){
@@ -1736,6 +1773,9 @@ function openNewEval(){
   document.getElementById('eval-sentadillas').value='';
   document.getElementById('eval-remos').value='';
   document.getElementById('eval-flexiones').value='';
+  document.getElementById('eval-dom-reps').value='';
+  document.getElementById('eval-dom-kg').value='';
+  document.getElementById('eval-dom-notas').value='';
   document.getElementById('eval-notas').value='';
   openModal('modal-eval');
 }
@@ -1745,11 +1785,14 @@ async function saveEval(){
   if(!fecha){showToast('⚠️ Pon la fecha');return;}
   var body={
     cliente_id:currentUser.id, fecha:fecha,
-    colgado_seg: parseInt(document.getElementById('eval-colgado').value)||null,
-    sentadillas: parseInt(document.getElementById('eval-sentadillas').value)||null,
-    remos:       parseInt(document.getElementById('eval-remos').value)||null,
-    flexiones:   parseInt(document.getElementById('eval-flexiones').value)||null,
-    notas:       document.getElementById('eval-notas').value.trim()
+    colgado_seg:     parseInt(document.getElementById('eval-colgado').value)||null,
+    sentadillas:     parseInt(document.getElementById('eval-sentadillas').value)||null,
+    remos:           parseInt(document.getElementById('eval-remos').value)||null,
+    flexiones:       parseInt(document.getElementById('eval-flexiones').value)||null,
+    dominadas_reps:  parseInt(document.getElementById('eval-dom-reps').value)||null,
+    dominadas_kg:    parseFloat(document.getElementById('eval-dom-kg').value)||null,
+    dominadas_notas: document.getElementById('eval-dom-notas').value.trim(),
+    notas:           document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
   btn.textContent='Guardando...';btn.disabled=true;
