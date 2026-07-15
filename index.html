@@ -224,6 +224,9 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .rounds-btns{display:flex;gap:8px}
 .rounds-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--gl);color:var(--cream);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
+/* ── PLACEHOLDER PREVIO ── */
+.prev-ph::placeholder { color: rgba(248,241,227,0.35); font-weight: 500; }
+
 /* ── SEPARADOR ── */
 .sep{height:1px;background:var(--gl);margin:12px 0}
 </style>
@@ -852,12 +855,15 @@ function renderSessionForm() {
     let setsHtml='';
     for(let s=0;s<ex.series;s++){
       const lastKg=last?.series?.[s]?.kg||last?.series?.[0]?.kg||'';
+      const lastReps = last?.series?.[s]?.reps || last?.series?.[0]?.reps || '';
+      const repsPlaceholder = lastReps || ex.repMin;
+      const kgPlaceholder = lastKg || '0';
       setsHtml+=`<div class="set-row">
         <div class="set-label">S${s+1}</div>
         <div><label class="form-label" style="font-size:10px">Reps</label>
-          <input type="number" class="form-input" id="reps_${eIdx}_${s}" placeholder="${ex.repMin}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
+          <input type="number" class="form-input prev-ph" id="reps_${eIdx}_${s}" placeholder="${repsPlaceholder}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
         <div><label class="form-label" style="font-size:10px">Kg</label>
-          <input type="number" class="form-input" id="kg_${eIdx}_${s}" placeholder="0" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="saveDraft()" value="${lastKg}"></div>
+          <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
       </div>`;
     }
     // Get last nota for this exercise
