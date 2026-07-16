@@ -787,18 +787,28 @@ function renderTabla() {
   const card=document.createElement('div'); card.className='card';
   card.innerHTML=`<div class="card-head"><h3>${dia.dia}</h3><span class="day-tag">${dia.ejercicios.length} ejerc.</span></div>`;
   dia.ejercicios.forEach((ex,idx)=>{
+    const isInfo = ex.informativo === true || ex.informativo === 'true';
     const last=getLastEntry(ex.nombre);
     let lastHtml='';
-    if(last){
+    if(last && !isInfo){
       const sets=(last.series||[]).filter(s=>s.reps>0);
       const sText=sets.map(s=>`${s.reps}r${s.kg?' @'+s.kg+'kg':''}`).join(' · ');
       lastHtml=`<div class="ex-last">Última (${formatDateShort(last.fecha)}): <strong>${sText}</strong>${last.nota?' · 📝'+last.nota:''}</div>`;
     }
     const row=document.createElement('div'); row.className='ex-row';
-    row.innerHTML=`<div class="ex-num">${idx+1}</div>
+    if(isInfo){
+      row.style.opacity='0.7';
+      row.style.background='rgba(255,255,255,.02)';
+    }
+    const infoBadge = isInfo ? '<span style="background:rgba(232,160,32,.2);color:var(--yellow);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px;margin-left:6px">ℹ Info</span>' : '';
+    const numStyle = isInfo ? 'background:var(--gl);color:var(--gt)' : '';
+    const metaText = isInfo
+      ? `${ex.series} series · ${ex.repMin}${ex.repMin!==ex.repMax?'–'+ex.repMax:''} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`
+      : `${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`;
+    row.innerHTML=`<div class="ex-num" style="${numStyle}">${idx+1}</div>
       <div class="ex-info">
-        <div class="ex-name">${ex.nombre}</div>
-        <div class="ex-meta">${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}</div>
+        <div class="ex-name">${ex.nombre}${infoBadge}</div>
+        <div class="ex-meta">${metaText}</div>
         ${lastHtml}
       </div>`;
     card.appendChild(row);
@@ -860,6 +870,8 @@ function renderSessionForm() {
   const body=document.getElementById('session-form-body');
   body.innerHTML='';
   dia.ejercicios.forEach((ex,eIdx)=>{
+    // Skip informative exercises - they don't need to be registered
+    if(ex.informativo === true || ex.informativo === 'true') return;
     const last=getLastEntry(ex.nombre);
     let lastHtml='';
     if(last){
@@ -926,6 +938,7 @@ function saveDraft(){
   if(!dia) return;
   const entries = [];
   dia.ejercicios.forEach((ex,eIdx)=>{
+    if(ex.informativo === true || ex.informativo === 'true') return;
     const series=[];
     for(let s=0;s<ex.series;s++){
       const reps = document.getElementById('reps_'+eIdx+'_'+s)?.value || '';
@@ -952,6 +965,7 @@ async function saveSession(){
   if(!fecha||!dia) return;
   const entries=[];
   dia.ejercicios.forEach((ex,eIdx)=>{
+    if(ex.informativo === true || ex.informativo === 'true') return;
     const series=[];
     for(let s=0;s<ex.series;s++){
       const reps=parseInt(document.getElementById(`reps_${eIdx}_${s}`)?.value)||0;
@@ -959,7 +973,8 @@ async function saveSession(){
       series.push({reps,kg});
     }
     const sensBtn=document.querySelector(`#sens_${eIdx} [data-sel]`);
-    if(series.some(s=>s.reps>0)) entries.push({ejercicio:ex.nombre,series,sensacion:sensBtn?.dataset.sel||'normal'});
+    const nota=document.getElementById('nota_'+eIdx)?.value?.trim()||'';
+    if(series.some(s=>s.reps>0)) entries.push({ejercicio:ex.nombre,series,sensacion:sensBtn?.dataset.sel||'normal',nota});
   });
   if(!entries.length){ showToast('⚠️ Rellena al menos un ejercicio'); return; }
   const btn=document.getElementById('btn-save-sess');
