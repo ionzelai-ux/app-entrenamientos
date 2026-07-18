@@ -772,6 +772,17 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
   </div>
 </div>
 
+<!-- MODAL DETALLE POR TEST -->
+<div class="modal-overlay" id="modal-test-detail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="test-detail-title">Detalle</div>
+      <button class="modal-close" onclick="closeModal('modal-test-detail')">✕</button>
+    </div>
+    <div id="test-detail-body"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1911,185 +1922,305 @@ async function loadEvaluaciones(){
 }
 
 function renderEval(){
-  const last = evaluaciones[0];
-  const box = document.getElementById('eval-last-box');
+  var box = document.getElementById('eval-last-box');
+  var histList = document.getElementById('eval-hist-list');
+  histList.innerHTML = '';
 
-  if(!last){
-    box.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación inicial</p></div>';
-    document.getElementById('eval-hist-list').innerHTML = '';
+  if(!evaluaciones.length){
+    box.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación pulsando el botón + arriba</p></div>';
     return;
   }
 
-  const prev = evaluaciones[1] || null;
-  function delta(cur, p) {
-    if(cur===null||cur===undefined) return '';
-    if(!p) return '';
-    var d = cur - p;
-    var col = d >= 0 ? 'var(--green)' : 'var(--red)';
-    return ' <span style="color:'+col+';font-size:11px">'+(d>0?'+':'')+d+'</span>';
-  }
+  var act = getEvalActivas();
 
-  var html = '<div style="padding:10px 14px 4px"><div class="section-title" style="padding:0;font-size:14px">Último test — '+formatDateShort(last.fecha)+'</div></div>';
-  html += '<div class="eval-card">';
+  // Definition of each test: how to extract values, format, label, icon, color, activa key
+  var TESTS = [
+    {key:'colgado', activa:'colgado', label:'Colgado en barra', icon:'⏱', unit:'seg', color:'var(--yellow)',
+      value: function(e){ return e.colgado_seg; },
+      display: function(v){ return v+' seg'; },
+      higherBetter:true
+    },
+    {key:'sentadillas_30s', activa:'sentadillas_30s', label:'Sentadillas 30s', icon:'🦵', unit:'reps', color:'var(--granate)',
+      value: function(e){ return e.sentadillas; },
+      display: function(v){ return v+' reps'; },
+      higherBetter:true
+    },
+    {key:'remos_30s', activa:'remos_30s', label:'Remos anillas 30s', icon:'🔁', unit:'reps', color:'var(--granate)',
+      value: function(e){ return e.remos; },
+      display: function(v){ return v+' reps'; },
+      higherBetter:true
+    },
+    {key:'flexiones_30s', activa:'flexiones_30s', label:'Flexiones 30s', icon:'💪', unit:'reps', color:'var(--granate)',
+      value: function(e){ return e.flexiones; },
+      display: function(v){ return v+' reps'; },
+      higherBetter:true
+    },
+    {key:'dominadas', activa:'dominadas', label:'Dominadas', icon:'🎯', unit:'reps', color:'var(--granate)',
+      value: function(e){ return e.dominadas_reps; },
+      display: function(v, e){
+        var s = v+' reps';
+        if(e && e.dominadas_kg && parseFloat(e.dominadas_kg)!==0){
+          var kg = parseFloat(e.dominadas_kg);
+          s += kg>0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
+        }
+        return s;
+      },
+      higherBetter:true
+    },
+    {key:'press_militar_kb', activa:'press_militar_kb', label:'Press militar KB', icon:'🏋️', unit:'kg', color:'var(--yellow)',
+      // Value used for progression comparison: total kg (kg * num)
+      value: function(e){ return (e.press_militar_kg && e.press_militar_num) ? parseFloat(e.press_militar_kg)*parseInt(e.press_militar_num) : null; },
+      display: function(v, e){
+        return e.press_militar_num+'KB · '+e.press_militar_kg+'kg = <strong>'+v+'kg total</strong> (6 reps)';
+      },
+      higherBetter:true
+    },
+    {key:'sentadilla_kb', activa:'sentadilla_kb', label:'Sentadilla KB', icon:'🦵', unit:'kg', color:'var(--green)',
+      value: function(e){ return (e.sentadilla_kg && e.sentadilla_num) ? parseFloat(e.sentadilla_kg)*parseInt(e.sentadilla_num) : null; },
+      display: function(v, e){
+        return e.sentadilla_num+'KB · '+e.sentadilla_kg+'kg = <strong>'+v+'kg total</strong> (6 reps)';
+      },
+      higherBetter:true
+    },
+    {key:'flex_progresion', activa:'flex_progresion', label:'Flexiones progresión', icon:'💪', unit:'reps', color:'var(--granate)',
+      // Combined "level score": nivel*100 + reps (for chart)
+      value: function(e){ return e.flex_nivel ? (parseInt(e.flex_nivel)*100 + (parseInt(e.flex_reps)||0)) : null; },
+      display: function(v, e){
+        var lvlNames = {1:'N1 Manos elev+rodillas', 2:'N2 Suelo+rodillas', 3:'N3 Elev sin rodillas', 4:'N4 Flexión libre', 5:'N5 Máx reps'};
+        return (e.flex_reps||0)+' reps <span style="color:var(--gt);font-size:12px">('+ (lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel) +')</span>';
+      },
+      higherBetter:true
+    },
+    {key:'elev_frontales', activa:'elev_frontales', label:'Elev. frontales barra', icon:'🏋️', unit:'reps', color:'var(--yellow)',
+      value: function(e){ return e.elev_frontales_reps; },
+      display: function(v, e){
+        var s = v+' reps';
+        if(e.elev_frontales_kg) s += ' @ '+e.elev_frontales_kg+'kg';
+        return s;
+      },
+      higherBetter:true
+    },
+    {key:'pino_iso', activa:'pino_iso', label:'Isometría de pino', icon:'🤸', unit:'seg', color:'var(--green)',
+      value: function(e){ return e.pino_iso_nivel ? (parseInt(e.pino_iso_nivel)*1000 + (parseInt(e.pino_iso_seg)||0)) : null; },
+      display: function(v, e){
+        var pinoNames = {1:'N1 Back wall', 2:'N2 Front wall', 3:'N3 Goma/mochila', 4:'N4 Libre'};
+        return (e.pino_iso_seg||0)+' seg <span style="color:var(--gt);font-size:12px">('+ (pinoNames[parseInt(e.pino_iso_nivel)]||'N'+e.pino_iso_nivel) +')</span>';
+      },
+      higherBetter:true
+    }
+  ];
 
-  function metricRow(icon, name, val, prevVal, unit) {
-    if(val===null||val===undefined) return '';
-    var prevTxt = (prevVal!==null&&prevVal!==undefined) ? 'Anterior: '+prevVal+' '+unit : 'Primera evaluación';
-    return '<div class="eval-metric">'
-      + '<div class="eval-icon">'+icon+'</div>'
-      + '<div class="eval-info"><div class="eval-name">'+name+'</div><div class="eval-best">'+prevTxt+'</div></div>'
-      + '<div style="text-align:right"><div class="eval-val">'+val+delta(val,prevVal)+'</div><div class="eval-unit">'+unit+'</div></div>'
+  var html = '<div style="padding:6px 14px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:1px;font-weight:700">Tus tests</div>';
+  var anyRendered = false;
+
+  TESTS.forEach(function(test){
+    if(act[test.activa] === false) return;
+    // Get all entries for this test (filter and sort by date desc)
+    var entries = evaluaciones
+      .map(function(e){ return { fecha:e.fecha, id:e.id, raw:e, val: test.value(e) }; })
+      .filter(function(x){ return x.val !== null && x.val !== undefined && x.val !== ''; })
+      .sort(function(a,b){ return b.fecha.localeCompare(a.fecha); });
+    if(!entries.length) return;
+    anyRendered = true;
+
+    var last = entries[0];
+    var prev = entries[1];
+    var deltaHtml = '';
+    if(prev && last.val !== null && prev.val !== null){
+      var d = last.val - prev.val;
+      if(d !== 0){
+        var isImprovement = test.higherBetter ? d>0 : d<0;
+        var col = isImprovement ? 'var(--green)' : 'var(--red)';
+        var sign = d>0 ? '+' : '';
+        // Special formatting for combined scores (flex_progresion, pino_iso) - just show arrow
+        if(test.key === 'flex_progresion' || test.key === 'pino_iso'){
+          deltaHtml = '<span style="color:'+col+';font-size:12px;font-weight:700">'+(isImprovement?'↑':'↓')+'</span>';
+        } else {
+          deltaHtml = '<span style="color:'+col+';font-size:12px;font-weight:700">'+sign+d+' '+test.unit+'</span>';
+        }
+      }
+    }
+
+    var displayValue = test.display(last.val, last.raw);
+
+    html += '<div style="background:var(--gd);border-radius:12px;margin:8px 14px;padding:14px;cursor:pointer;border:1px solid transparent" onclick="openTestDetail(\''+test.key+'\')">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +   '<div style="display:flex;align-items:center;gap:8px">'
+      +     '<div style="font-size:20px">'+test.icon+'</div>'
+      +     '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:'+test.color+'">'+test.label+'</div>'
+      +   '</div>'
+      +   '<div style="color:var(--gt);font-size:16px">›</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:baseline;justify-content:space-between">'
+      +   '<div style="font-size:15px;color:var(--cream);font-weight:600">'+displayValue+'</div>'
+      +   '<div style="display:flex;align-items:center;gap:8px">'
+      +     deltaHtml
+      +     '<span style="font-size:11px;color:var(--gt)">'+formatDateShort(last.fecha)+'</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--gt);margin-top:4px">'+entries.length+' entrada'+(entries.length!==1?'s':'')+'</div>'
       + '</div>';
+  });
+
+  if(!anyRendered){
+    html = '<div class="empty"><div class="empty-icon">📊</div><h3>Sin datos aún</h3><p>Registra tu primera evaluación pulsando el botón + arriba</p></div>';
   }
 
-  html += metricRow('⏱','Colgado en barra', last.colgado_seg, prev&&prev.colgado_seg, 'seg');
-  html += metricRow('🦵','Sentadillas 30s',  last.sentadillas,  prev&&prev.sentadillas,  'reps');
-  html += metricRow('🔁','Remos anillas 30s',last.remos,        prev&&prev.remos,        'reps');
-  html += metricRow('💪','Flexiones 30s',    last.flexiones,    prev&&prev.flexiones,    'reps');
-
-  // Dominadas
-  if(last.dominadas_reps !== null && last.dominadas_reps !== undefined && last.dominadas_reps !== ''){
-    var domKgInfo = '';
-    if(last.dominadas_kg && parseFloat(last.dominadas_kg) !== 0){
-      var dkg = parseFloat(last.dominadas_kg);
-      domKgInfo = dkg > 0 ? ' (+'+dkg+'kg lastre)' : ' ('+dkg+'kg ayuda)';
-    }
-    html += metricRow('🎯', 'Dominadas'+domKgInfo, last.dominadas_reps, prev&&prev.dominadas_reps, 'reps');
-    if(last.dominadas_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">🎨 '+last.dominadas_notas+'</div>';
-  }
-
-  // Press militar KB (calcular total kg si hay 2 KB)
-  if(last.press_militar_kg && last.press_militar_num){
-    var pmKg = parseFloat(last.press_militar_kg);
-    var pmNum = parseInt(last.press_militar_num);
-    var pmTotal = pmKg * pmNum;
-    var pmName = 'Press militar '+pmNum+'KB · '+pmTotal+'kg total';
-    var pmPrevTotal = null;
-    if(prev && prev.press_militar_kg && prev.press_militar_num){
-      pmPrevTotal = parseFloat(prev.press_militar_kg) * parseInt(prev.press_militar_num);
-    }
-    html += metricRow('🏋️', pmName, '6 reps', pmPrevTotal!==null?'6 reps':null, '@ '+pmTotal+'kg');
-    if(last.press_militar_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.press_militar_notas+'</div>';
-  }
-
-  // Sentadilla KB
-  if(last.sentadilla_kg && last.sentadilla_num){
-    var sqKg = parseFloat(last.sentadilla_kg);
-    var sqNum = parseInt(last.sentadilla_num);
-    var sqTotal = sqKg * sqNum;
-    var sqName = 'Sentadilla '+sqNum+'KB · '+sqTotal+'kg total';
-    var sqPrevTotal = null;
-    if(prev && prev.sentadilla_kg && prev.sentadilla_num){
-      sqPrevTotal = parseFloat(prev.sentadilla_kg) * parseInt(prev.sentadilla_num);
-    }
-    html += metricRow('🦵', sqName, '6 reps', sqPrevTotal!==null?'6 reps':null, '@ '+sqTotal+'kg');
-    if(last.sentadilla_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.sentadilla_notas+'</div>';
-  }
-
-  // Flexiones progresión
-  if(last.flex_nivel){
-    var lvlNames = {
-      1:'N1 · Manos elevadas + rodillas',
-      2:'N2 · Suelo + rodillas',
-      3:'N3 · Elevadas sin rodillas',
-      4:'N4 · Flexión libre',
-      5:'N5 · Máx. reps seguidas'
-    };
-    var lvlN = parseInt(last.flex_nivel);
-    var flexName = 'Flexiones · '+(lvlNames[lvlN]||'Nivel '+lvlN);
-    var flexReps = last.flex_reps || '—';
-    var prevFlexReps = (prev && prev.flex_nivel === lvlN) ? prev.flex_reps : null;
-    html += metricRow('💪', flexName, flexReps, prevFlexReps, 'reps');
-    if(last.flex_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.flex_notas+'</div>';
-  }
-
-  // Elevaciones frontales
-  if(last.elev_frontales_reps){
-    var efName = 'Elev. frontales barra';
-    if(last.elev_frontales_kg) efName += ' · '+last.elev_frontales_kg+'kg';
-    html += metricRow('🏋️', efName, last.elev_frontales_reps, prev&&prev.elev_frontales_reps, 'reps');
-    if(last.elev_frontales_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.elev_frontales_notas+'</div>';
-  }
-
-  // Pino isometría
-  if(last.pino_iso_nivel){
-    var pinoNames = {
-      1:'N1 · Back wall',
-      2:'N2 · Front wall',
-      3:'N3 · Con goma/mochila',
-      4:'N4 · Libre'
-    };
-    var pinoLvl = parseInt(last.pino_iso_nivel);
-    var pinoName = 'Pino iso · '+(pinoNames[pinoLvl]||'Nivel '+pinoLvl);
-    var pinoSeg = last.pino_iso_seg || '—';
-    var prevPinoSeg = (prev && parseInt(prev.pino_iso_nivel) === pinoLvl) ? prev.pino_iso_seg : null;
-    html += metricRow('🤸', pinoName, pinoSeg, prevPinoSeg, 'seg');
-    if(last.pino_iso_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.pino_iso_notas+'</div>';
-  }
-
-  if(last.notas) html += '<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 '+last.notas+'</div>';
-  html += '</div>';
   box.innerHTML = html;
 
-  // Historial
-  var list = document.getElementById('eval-hist-list');
-  if(evaluaciones.length <= 1){ list.innerHTML=''; return; }
-  var hhtml = '<div class="section-title">Historial</div><div class="card">';
-  evaluaciones.slice(1).forEach(function(ev){
-    hhtml += '<div style="padding:11px 14px;border-bottom:1px solid var(--gm);cursor:pointer" onclick="viewEval('+ev.id+')">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center">'
-      + '<div><div style="font-weight:700;font-size:14px">'+formatDateShort(ev.fecha)+'</div>'
-      + '<div style="font-size:12px;color:var(--gt);margin-top:2px">'
-      + '⏱'+(ev.colgado_seg||'—')+'s · 🦵'+(ev.sentadillas||'—')+' · 🔁'+(ev.remos||'—')+' · 💪'+(ev.flexiones||'—')+' · 🎯'+(ev.dominadas_reps||'—')
-      + '</div></div><div style="color:var(--gt)">›</div></div></div>';
-  });
-  hhtml += '</div>';
-  list.innerHTML = hhtml;
+  // Also render "Notas generales" from last evaluation if any
+  var lastEvalWithNotes = evaluaciones.find(function(e){ return e.notas && e.notas.trim(); });
+  if(lastEvalWithNotes){
+    histList.innerHTML = '<div style="padding:16px 14px 8px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:1px;font-weight:700">Última nota general</div>'
+      + '<div class="card" style="padding:12px 14px;font-size:13px">📝 '+lastEvalWithNotes.notas+' <span style="color:var(--gt);font-size:11px">· '+formatDateShort(lastEvalWithNotes.fecha)+'</span></div>';
+  }
 }
 
-function viewEval(id){
-  var ev = evaluaciones.find(function(e){return e.id===id;});
+// ─── MODAL DETALLE POR TEST ───
+var TEST_DEFINITIONS = null;
+function openTestDetail(testKey){
+  // Rebuild TEST_DEFINITIONS lazily using same shape as in renderEval
+  if(!TEST_DEFINITIONS){
+    TEST_DEFINITIONS = {
+      colgado:          {label:'Colgado en barra', icon:'⏱', unit:'seg',  value:function(e){return e.colgado_seg;},           display:function(v,e){return v+' seg';}, notesField:'notas'},
+      sentadillas_30s:  {label:'Sentadillas 30s',  icon:'🦵', unit:'reps', value:function(e){return e.sentadillas;},           display:function(v,e){return v+' reps';}, notesField:'notas'},
+      remos_30s:        {label:'Remos anillas 30s',icon:'🔁', unit:'reps', value:function(e){return e.remos;},                 display:function(v,e){return v+' reps';}, notesField:'notas'},
+      flexiones_30s:    {label:'Flexiones 30s',    icon:'💪', unit:'reps', value:function(e){return e.flexiones;},             display:function(v,e){return v+' reps';}, notesField:'notas'},
+      dominadas:        {label:'Dominadas', icon:'🎯', unit:'reps',
+        value:function(e){return e.dominadas_reps;},
+        display:function(v,e){
+          var s=v+' reps';
+          if(e.dominadas_kg && parseFloat(e.dominadas_kg)!==0){var kg=parseFloat(e.dominadas_kg); s+= kg>0?' (+'+kg+'kg lastre)':' ('+kg+'kg ayuda)';}
+          return s;
+        },
+        notesField:'dominadas_notas'},
+      press_militar_kb: {label:'Press militar KB', icon:'🏋️', unit:'kg',
+        value:function(e){return (e.press_militar_kg && e.press_militar_num)?parseFloat(e.press_militar_kg)*parseInt(e.press_militar_num):null;},
+        display:function(v,e){return e.press_militar_num+'KB · '+e.press_militar_kg+'kg = '+v+'kg total (6 reps)';},
+        notesField:'press_militar_notas'},
+      sentadilla_kb:    {label:'Sentadilla KB', icon:'🦵', unit:'kg',
+        value:function(e){return (e.sentadilla_kg && e.sentadilla_num)?parseFloat(e.sentadilla_kg)*parseInt(e.sentadilla_num):null;},
+        display:function(v,e){return e.sentadilla_num+'KB · '+e.sentadilla_kg+'kg = '+v+'kg total (6 reps)';},
+        notesField:'sentadilla_notas'},
+      flex_progresion:  {label:'Flexiones progresión', icon:'💪', unit:'reps',
+        value:function(e){return e.flex_nivel?(parseInt(e.flex_nivel)*100+(parseInt(e.flex_reps)||0)):null;},
+        display:function(v,e){
+          var lvlNames={1:'N1 Manos elev+rodillas',2:'N2 Suelo+rodillas',3:'N3 Elev sin rodillas',4:'N4 Flexión libre',5:'N5 Máx reps'};
+          return (e.flex_reps||0)+' reps · '+(lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel);
+        },
+        notesField:'flex_notas'},
+      elev_frontales:   {label:'Elev. frontales', icon:'🏋️', unit:'reps',
+        value:function(e){return e.elev_frontales_reps;},
+        display:function(v,e){var s=v+' reps'; if(e.elev_frontales_kg)s+=' @ '+e.elev_frontales_kg+'kg'; return s;},
+        notesField:'elev_frontales_notas'},
+      pino_iso:         {label:'Isometría pino', icon:'🤸', unit:'seg',
+        value:function(e){return e.pino_iso_nivel?(parseInt(e.pino_iso_nivel)*1000+(parseInt(e.pino_iso_seg)||0)):null;},
+        display:function(v,e){
+          var pinoNames={1:'N1 Back wall',2:'N2 Front wall',3:'N3 Goma/mochila',4:'N4 Libre'};
+          return (e.pino_iso_seg||0)+' seg · '+(pinoNames[parseInt(e.pino_iso_nivel)]||'N'+e.pino_iso_nivel);
+        },
+        notesField:'pino_iso_notas'}
+    };
+  }
+  var def = TEST_DEFINITIONS[testKey];
+  if(!def) return;
+
+  var entries = evaluaciones
+    .map(function(e){ return { fecha:e.fecha, id:e.id, raw:e, val:def.value(e) }; })
+    .filter(function(x){ return x.val !== null && x.val !== undefined && x.val !== ''; })
+    .sort(function(a,b){ return b.fecha.localeCompare(a.fecha); });
+
+  document.getElementById('test-detail-title').innerHTML = def.icon+' '+def.label;
+
+  var body = '';
+
+  // Chart
+  if(entries.length > 1){
+    var chartPts = entries.slice(0, 10).reverse();
+    var vals = chartPts.map(function(p){return p.val;});
+    var maxV = Math.max.apply(null, vals);
+    var minV = Math.min.apply(null, vals);
+    var range = maxV - minV || 1;
+    var W=280, H=100, pad=10;
+    var n = chartPts.length;
+    function pxc(i){ return n<2?W/2 : pad + i*(W-pad*2)/(n-1); }
+    function pyc(v){ return H-pad - ((v-minV)/range)*(H-pad*2-16); }
+    var linePts = chartPts.map(function(p,i){return pxc(i)+','+pyc(p.val);}).join(' ');
+    var dots = chartPts.map(function(p,i){
+      return '<circle cx="'+pxc(i)+'" cy="'+pyc(p.val)+'" r="3.5" fill="#97272E" stroke="#0d0d0d" stroke-width="1.5"/>';
+    }).join('');
+    body += '<div style="background:var(--gm);border-radius:10px;padding:12px;margin-bottom:14px">'
+      + '<div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Evolución (últimas '+n+')</div>'
+      + '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:110px;display:block">'
+      + '<polyline points="'+linePts+'" fill="none" stroke="#97272E" stroke-width="2" stroke-linejoin="round"/>'
+      + dots
+      + '</svg></div>';
+  }
+
+  // Entries list
+  body += '<div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px">Todas las entradas ('+entries.length+')</div>';
+  entries.forEach(function(ent){
+    var displayVal = def.display(ent.val, ent.raw);
+    var noteText = ent.raw[def.notesField] || '';
+    body += '<div style="background:var(--gm);border-radius:8px;padding:12px;margin-bottom:8px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      +   '<div>'
+      +     '<div style="font-size:14px;font-weight:600;color:var(--cream)">'+displayVal+'</div>'
+      +     '<div style="font-size:11px;color:var(--gt);margin-top:2px">'+formatDateShort(ent.fecha)+'</div>'
+      +   '</div>'
+      +   '<button class="btn-ghost" onclick="deleteEvalTestEntry('+ent.id+',\''+testKey+'\')" style="color:var(--red);font-size:12px;padding:6px 10px;background:rgba(208,48,48,.1);border:1px solid rgba(208,48,48,.3);border-radius:6px">🗑</button>'
+      + '</div>'
+      + (noteText ? '<div style="font-size:11px;color:var(--gt);margin-top:6px;padding-top:6px;border-top:1px solid var(--gl)">📝 '+noteText+'</div>' : '')
+      + '</div>';
+  });
+
+  document.getElementById('test-detail-body').innerHTML = body;
+  openModal('modal-test-detail');
+}
+
+async function deleteEvalTestEntry(evalId, testKey){
+  if(!confirm('¿Eliminar este registro?\n\nSolo se borrará esta métrica de esa evaluación. Si la evaluación queda sin ningún dato, se eliminará completa.')) return;
+  var ev = evaluaciones.find(function(e){return e.id===evalId;});
   if(!ev) return;
-  var lines = ['Evaluación '+formatDateShort(ev.fecha), ''];
-  lines.push('⏱ Colgado: '+(ev.colgado_seg||'—')+'s');
-  lines.push('🦵 Sentadillas 30s: '+(ev.sentadillas||'—')+' reps');
-  lines.push('🔁 Remos 30s: '+(ev.remos||'—')+' reps');
-  lines.push('💪 Flexiones 30s: '+(ev.flexiones||'—')+' reps');
-  if(ev.dominadas_reps){
-    var domTxt = ev.dominadas_reps + ' reps';
-    if(ev.dominadas_kg && parseFloat(ev.dominadas_kg) !== 0){
-      var kg = parseFloat(ev.dominadas_kg);
-      domTxt += kg > 0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
+
+  // Fields to clear per test
+  var CLEAR_MAP = {
+    colgado:          ['colgado_seg'],
+    sentadillas_30s:  ['sentadillas'],
+    remos_30s:        ['remos'],
+    flexiones_30s:    ['flexiones'],
+    dominadas:        ['dominadas_reps','dominadas_kg','dominadas_notas'],
+    press_militar_kb: ['press_militar_kg','press_militar_num','press_militar_notas'],
+    sentadilla_kb:    ['sentadilla_kg','sentadilla_num','sentadilla_notas'],
+    flex_progresion:  ['flex_nivel','flex_reps','flex_notas'],
+    elev_frontales:   ['elev_frontales_reps','elev_frontales_kg','elev_frontales_notas'],
+    pino_iso:         ['pino_iso_nivel','pino_iso_seg','pino_iso_notas']
+  };
+  var toClear = CLEAR_MAP[testKey] || [];
+  var patch = {};
+  toClear.forEach(function(f){ patch[f] = null; });
+
+  try {
+    // Check if after clearing this test, the evaluation has ANY data left
+    var evCopy = Object.assign({}, ev, patch);
+    var hasAnyData =
+      evCopy.colgado_seg || evCopy.sentadillas || evCopy.remos || evCopy.flexiones ||
+      evCopy.dominadas_reps || evCopy.press_militar_kg || evCopy.sentadilla_kg ||
+      evCopy.flex_nivel || evCopy.elev_frontales_reps || evCopy.pino_iso_nivel ||
+      (evCopy.notas && evCopy.notas.trim());
+
+    if(!hasAnyData){
+      // Delete entire evaluation
+      await sbDelete('evaluaciones','id=eq.'+evalId);
+      evaluaciones = evaluaciones.filter(function(e){return e.id!==evalId;});
+    } else {
+      await sbPatch('evaluaciones','id=eq.'+evalId, patch);
+      Object.assign(ev, patch);
     }
-    lines.push('🎯 Dominadas: '+domTxt);
-    if(ev.dominadas_notas) lines.push('    🎨 '+ev.dominadas_notas);
-  }
-  if(ev.press_militar_kg && ev.press_militar_num){
-    var pmTot = parseFloat(ev.press_militar_kg) * parseInt(ev.press_militar_num);
-    lines.push('🏋️ Press militar: 6 reps · '+ev.press_militar_num+'KB de '+ev.press_militar_kg+'kg = '+pmTot+'kg total');
-    if(ev.press_militar_notas) lines.push('    📝 '+ev.press_militar_notas);
-  }
-  if(ev.sentadilla_kg && ev.sentadilla_num){
-    var sqTot = parseFloat(ev.sentadilla_kg) * parseInt(ev.sentadilla_num);
-    lines.push('🦵 Sentadilla KB: 6 reps · '+ev.sentadilla_num+'KB de '+ev.sentadilla_kg+'kg = '+sqTot+'kg total');
-    if(ev.sentadilla_notas) lines.push('    📝 '+ev.sentadilla_notas);
-  }
-  if(ev.flex_nivel){
-    var lvlNames = {1:'Manos elevadas + rodillas',2:'Suelo + rodillas',3:'Elevadas sin rodillas',4:'Flexión libre',5:'Máx reps seguidas'};
-    lines.push('💪 Flexiones N'+ev.flex_nivel+': '+(ev.flex_reps||'—')+' reps ('+lvlNames[parseInt(ev.flex_nivel)]+')');
-    if(ev.flex_notas) lines.push('    📝 '+ev.flex_notas);
-  }
-  if(ev.elev_frontales_reps){
-    lines.push('🏋️ Elev. frontales: '+ev.elev_frontales_reps+' reps'+(ev.elev_frontales_kg?' @ '+ev.elev_frontales_kg+'kg':''));
-    if(ev.elev_frontales_notas) lines.push('    📝 '+ev.elev_frontales_notas);
-  }
-  if(ev.pino_iso_nivel){
-    var pinoNames = {1:'Back wall',2:'Front wall',3:'Con goma/mochila',4:'Libre'};
-    lines.push('🤸 Pino iso N'+ev.pino_iso_nivel+': '+(ev.pino_iso_seg||'—')+' seg ('+pinoNames[parseInt(ev.pino_iso_nivel)]+')');
-    if(ev.pino_iso_notas) lines.push('    📝 '+ev.pino_iso_notas);
-  }
-  if(ev.notas){ lines.push(''); lines.push('📝 '+ev.notas); }
-  alert(lines.join('\n'));
+    showToast('🗑 Registro eliminado');
+    closeModal('modal-test-detail');
+    renderEval();
+  } catch(e){ showToast('❌ Error al eliminar'); console.error(e); }
 }
 
 function openNewEval(){
