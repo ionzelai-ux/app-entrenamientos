@@ -532,6 +532,17 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       </div>
       <div id="ciclos-list"></div>
     </div>
+
+    <!-- Evaluaciones activas (solo en edición) -->
+    <div id="evaluaciones-activas-section" class="hide">
+      <div class="sep"></div>
+      <div style="margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px">Evaluaciones activas</div>
+        <div style="font-size:11px;color:var(--gt);margin-top:2px">Marca qué evaluaciones puede registrar este cliente</div>
+      </div>
+      <div id="eval-activas-list"></div>
+      <button class="btn btn-primary" onclick="saveEvalActivas()" style="margin-top:10px" id="btn-save-eval-activas">Guardar evaluaciones activas</button>
+    </div>
     <div style="height:12px"></div>
   </div>
 </div>
@@ -577,27 +588,27 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <input type="date" class="form-input" id="eval-fecha">
     </div>
     <div class="info-box">Test de <strong>30 segundos</strong> para sentadillas, remos y flexiones. El colgado es tiempo máximo.</div>
-    <div class="form-row">
-      <div class="form-group">
+    <div class="form-row" id="eval-block-simple-tests">
+      <div class="form-group" id="eval-block-colgado">
         <label class="form-label">⏱ Colgado (seg)</label>
         <input type="number" class="form-input" id="eval-colgado" placeholder="0" min="0" inputmode="numeric">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="eval-block-sentadillas-30s">
         <label class="form-label">🦵 Sentadillas (30s)</label>
         <input type="number" class="form-input" id="eval-sentadillas" placeholder="0" min="0" inputmode="numeric">
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
+    <div class="form-row" id="eval-block-simple-tests-2">
+      <div class="form-group" id="eval-block-remos-30s">
         <label class="form-label">🔁 Remos anillas (30s)</label>
         <input type="number" class="form-input" id="eval-remos" placeholder="0" min="0" inputmode="numeric">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="eval-block-flexiones-30s">
         <label class="form-label">💪 Flexiones (30s)</label>
         <input type="number" class="form-input" id="eval-flexiones" placeholder="0" min="0" inputmode="numeric">
       </div>
     </div>
-    <div style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+    <div id="eval-block-dominadas" style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:var(--granate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🎯 Dominadas</div>
       <div class="form-row">
         <div class="form-group" style="margin-bottom:0">
@@ -614,6 +625,127 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
         <input type="text" class="form-input" id="eval-dom-notas" placeholder="Ej: goma verde, sin ayuda, +5kg lastre...">
       </div>
     </div>
+
+    <!-- PRESS MILITAR -->
+    <div id="eval-block-press-militar-kb" style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🏋️ Press militar (6 reps con kettlebell)</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">Peso máximo con el que puede hacer 6 reps</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Peso de la KB (kg)</label>
+          <input type="number" class="form-input" id="eval-pm-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">¿Una o dos KB?</label>
+          <select class="form-select" id="eval-pm-num">
+            <option value="">—</option>
+            <option value="1">1 kettlebell</option>
+            <option value="2">2 kettlebells</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-pm-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <!-- SENTADILLA -->
+    <div id="eval-block-sentadilla-kb" style="background:rgba(58,173,110,.08);border:1px solid rgba(58,173,110,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🦵 Sentadilla (6 reps con kettlebell)</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">Peso máximo con el que puede hacer 6 reps</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Peso de la KB (kg)</label>
+          <input type="number" class="form-input" id="eval-sq-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">¿Una o dos KB?</label>
+          <select class="form-select" id="eval-sq-num">
+            <option value="">—</option>
+            <option value="1">1 kettlebell</option>
+            <option value="2">2 kettlebells</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-sq-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <!-- FLEXIONES -->
+    <div id="eval-block-flex-progresion" style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--granate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💪 Flexiones — Progresión</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">En niveles 1-4 hay que llegar a 6 reps para subir. En nivel 5 se cuentan reps totales seguidas.</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Nivel actual</label>
+        <select class="form-select" id="eval-flex-nivel">
+          <option value="">—</option>
+          <option value="1">Nivel 1 — Manos elevadas + rodillas</option>
+          <option value="2">Nivel 2 — Suelo + rodillas</option>
+          <option value="3">Nivel 3 — Manos elevadas sin rodillas</option>
+          <option value="4">Nivel 4 — Flexión libre (suelo, sin rodillas)</option>
+          <option value="5">Nivel 5 — Contar máx. flexiones seguidas</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Reps en este nivel</label>
+          <input type="number" class="form-input" id="eval-flex-reps-test" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Notas</label>
+          <input type="text" class="form-input" id="eval-flex-notas" placeholder="Observaciones...">
+        </div>
+      </div>
+    </div>
+
+    <!-- ELEVACIONES FRONTALES -->
+    <div id="eval-block-elev-frontales" style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🏋️ Elevaciones frontales con barra olímpica</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Repeticiones</label>
+          <input type="number" class="form-input" id="eval-ef-reps" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Peso (kg)</label>
+          <input type="number" class="form-input" id="eval-ef-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-ef-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <!-- ISOMETRÍA DE PINO -->
+    <div id="eval-block-pino-iso" style="background:rgba(58,173,110,.08);border:1px solid rgba(58,173,110,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🤸 Isometría de pino (segundos)</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">Selecciona el nivel de progresión y los segundos aguantados.</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Nivel de progresión</label>
+        <select class="form-select" id="eval-pino-nivel">
+          <option value="">—</option>
+          <option value="1">Nivel 1 — Back wall (espalda a la pared)</option>
+          <option value="2">Nivel 2 — Front wall (frente a la pared)</option>
+          <option value="3">Nivel 3 — Con goma / mochila</option>
+          <option value="4">Nivel 4 — Libre (sin apoyo)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Segundos aguantados</label>
+          <input type="number" class="form-input" id="eval-pino-seg" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Notas</label>
+          <input type="text" class="form-input" id="eval-pino-notas" placeholder="Observaciones...">
+        </div>
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Notas generales</label>
       <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
@@ -1289,6 +1421,7 @@ function openNewClient(){
   document.getElementById('cl-activo').value='true';
   document.getElementById('btn-toggle-client').classList.add('hide');
   document.getElementById('ciclos-section').classList.add('hide');
+  document.getElementById('evaluaciones-activas-section').classList.add('hide');
   openModal('modal-client');
 }
 
@@ -1306,9 +1439,73 @@ async function openEditClient(id){
     togBtn.textContent=c.activo?'🔴 Bloquear acceso':'✅ Activar acceso';
     // Mostrar ciclos
     document.getElementById('ciclos-section').classList.remove('hide');
+    document.getElementById('evaluaciones-activas-section').classList.remove('hide');
     await loadCiclosAdmin(id);
+    renderEvalActivas(c);
     openModal('modal-client');
   } catch(e){ showToast('Error al cargar cliente'); }
+}
+
+// ═══════════════════════════════════════════
+// ADMIN - EVALUACIONES ACTIVAS
+// ═══════════════════════════════════════════
+const EVAL_LABELS = [
+  {key:'colgado',          label:'⏱ Colgado en barra (seg)'},
+  {key:'sentadillas_30s',  label:'🦵 Sentadillas 30s'},
+  {key:'remos_30s',        label:'🔁 Remos anillas 30s'},
+  {key:'flexiones_30s',    label:'💪 Flexiones 30s'},
+  {key:'dominadas',        label:'🎯 Dominadas'},
+  {key:'press_militar_kb', label:'🏋️ Press militar KB (6 reps)'},
+  {key:'sentadilla_kb',    label:'🦵 Sentadilla KB (6 reps)'},
+  {key:'flex_progresion',  label:'💪 Flexiones progresión'},
+  {key:'elev_frontales',   label:'🏋️ Elevaciones frontales barra'},
+  {key:'pino_iso',         label:'🤸 Isometría de pino'}
+];
+
+function renderEvalActivas(cliente){
+  var defaults = {
+    colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
+    dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
+    elev_frontales:false, pino_iso:false
+  };
+  var act = Object.assign({}, defaults, cliente.evaluaciones_activas || {});
+  var html = '';
+  EVAL_LABELS.forEach(function(item){
+    var isOn = act[item.key] === true;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--gm);border-radius:8px;padding:10px 12px;margin-bottom:6px">'
+      + '<div style="font-size:13px">'+item.label+'</div>'
+      + '<div class="toggle-eval-ac '+(isOn?'on':'')+'" data-key="'+item.key+'" onclick="toggleEvalActiva(this)" style="position:relative;width:44px;height:24px;background:'+(isOn?'var(--green)':'var(--gl)')+';border-radius:12px;cursor:pointer;transition:background .2s;flex-shrink:0">'
+      + '<div style="position:absolute;top:2px;left:'+(isOn?'22px':'2px')+';width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s"></div>'
+      + '</div></div>';
+  });
+  document.getElementById('eval-activas-list').innerHTML = html;
+}
+
+function toggleEvalActiva(el){
+  var isOn = el.classList.contains('on');
+  el.classList.toggle('on');
+  el.style.background = isOn ? 'var(--gl)' : 'var(--green)';
+  var dot = el.querySelector('div');
+  if(dot) dot.style.left = isOn ? '2px' : '22px';
+}
+
+async function saveEvalActivas(){
+  if(!editClientId) return;
+  var body = {};
+  document.querySelectorAll('#eval-activas-list .toggle-eval-ac').forEach(function(el){
+    body[el.dataset.key] = el.classList.contains('on');
+  });
+  var btn = document.getElementById('btn-save-eval-activas');
+  btn.textContent='Guardando...'; btn.disabled=true;
+  try {
+    await sbPatch('clientes','id=eq.'+editClientId, {evaluaciones_activas: body});
+    showToast('✅ Evaluaciones activas guardadas');
+    // Update currentUser if editing self
+    if(currentUser && currentUser.id === editClientId){
+      currentUser.evaluaciones_activas = body;
+    }
+  } catch(e){ showToast('❌ Error al guardar'); console.error(e); }
+  finally { btn.textContent='Guardar evaluaciones activas'; btn.disabled=false; }
 }
 
 async function saveClient(){
@@ -1749,17 +1946,87 @@ function renderEval(){
   html += metricRow('🦵','Sentadillas 30s',  last.sentadillas,  prev&&prev.sentadillas,  'reps');
   html += metricRow('🔁','Remos anillas 30s',last.remos,        prev&&prev.remos,        'reps');
   html += metricRow('💪','Flexiones 30s',    last.flexiones,    prev&&prev.flexiones,    'reps');
-  // Dominadas: show reps + kg info
+
+  // Dominadas
   if(last.dominadas_reps !== null && last.dominadas_reps !== undefined && last.dominadas_reps !== ''){
-    var kgInfo = '';
+    var domKgInfo = '';
     if(last.dominadas_kg && parseFloat(last.dominadas_kg) !== 0){
-      var kg = parseFloat(last.dominadas_kg);
-      kgInfo = kg > 0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
+      var dkg = parseFloat(last.dominadas_kg);
+      domKgInfo = dkg > 0 ? ' (+'+dkg+'kg lastre)' : ' ('+dkg+'kg ayuda)';
     }
-    var domName = 'Dominadas'+kgInfo;
-    html += metricRow('🎯', domName, last.dominadas_reps, prev&&prev.dominadas_reps, 'reps');
+    html += metricRow('🎯', 'Dominadas'+domKgInfo, last.dominadas_reps, prev&&prev.dominadas_reps, 'reps');
     if(last.dominadas_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">🎨 '+last.dominadas_notas+'</div>';
   }
+
+  // Press militar KB (calcular total kg si hay 2 KB)
+  if(last.press_militar_kg && last.press_militar_num){
+    var pmKg = parseFloat(last.press_militar_kg);
+    var pmNum = parseInt(last.press_militar_num);
+    var pmTotal = pmKg * pmNum;
+    var pmName = 'Press militar '+pmNum+'KB · '+pmTotal+'kg total';
+    var pmPrevTotal = null;
+    if(prev && prev.press_militar_kg && prev.press_militar_num){
+      pmPrevTotal = parseFloat(prev.press_militar_kg) * parseInt(prev.press_militar_num);
+    }
+    html += metricRow('🏋️', pmName, '6 reps', pmPrevTotal!==null?'6 reps':null, '@ '+pmTotal+'kg');
+    if(last.press_militar_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.press_militar_notas+'</div>';
+  }
+
+  // Sentadilla KB
+  if(last.sentadilla_kg && last.sentadilla_num){
+    var sqKg = parseFloat(last.sentadilla_kg);
+    var sqNum = parseInt(last.sentadilla_num);
+    var sqTotal = sqKg * sqNum;
+    var sqName = 'Sentadilla '+sqNum+'KB · '+sqTotal+'kg total';
+    var sqPrevTotal = null;
+    if(prev && prev.sentadilla_kg && prev.sentadilla_num){
+      sqPrevTotal = parseFloat(prev.sentadilla_kg) * parseInt(prev.sentadilla_num);
+    }
+    html += metricRow('🦵', sqName, '6 reps', sqPrevTotal!==null?'6 reps':null, '@ '+sqTotal+'kg');
+    if(last.sentadilla_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.sentadilla_notas+'</div>';
+  }
+
+  // Flexiones progresión
+  if(last.flex_nivel){
+    var lvlNames = {
+      1:'N1 · Manos elevadas + rodillas',
+      2:'N2 · Suelo + rodillas',
+      3:'N3 · Elevadas sin rodillas',
+      4:'N4 · Flexión libre',
+      5:'N5 · Máx. reps seguidas'
+    };
+    var lvlN = parseInt(last.flex_nivel);
+    var flexName = 'Flexiones · '+(lvlNames[lvlN]||'Nivel '+lvlN);
+    var flexReps = last.flex_reps || '—';
+    var prevFlexReps = (prev && prev.flex_nivel === lvlN) ? prev.flex_reps : null;
+    html += metricRow('💪', flexName, flexReps, prevFlexReps, 'reps');
+    if(last.flex_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.flex_notas+'</div>';
+  }
+
+  // Elevaciones frontales
+  if(last.elev_frontales_reps){
+    var efName = 'Elev. frontales barra';
+    if(last.elev_frontales_kg) efName += ' · '+last.elev_frontales_kg+'kg';
+    html += metricRow('🏋️', efName, last.elev_frontales_reps, prev&&prev.elev_frontales_reps, 'reps');
+    if(last.elev_frontales_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.elev_frontales_notas+'</div>';
+  }
+
+  // Pino isometría
+  if(last.pino_iso_nivel){
+    var pinoNames = {
+      1:'N1 · Back wall',
+      2:'N2 · Front wall',
+      3:'N3 · Con goma/mochila',
+      4:'N4 · Libre'
+    };
+    var pinoLvl = parseInt(last.pino_iso_nivel);
+    var pinoName = 'Pino iso · '+(pinoNames[pinoLvl]||'Nivel '+pinoLvl);
+    var pinoSeg = last.pino_iso_seg || '—';
+    var prevPinoSeg = (prev && parseInt(prev.pino_iso_nivel) === pinoLvl) ? prev.pino_iso_seg : null;
+    html += metricRow('🤸', pinoName, pinoSeg, prevPinoSeg, 'seg');
+    if(last.pino_iso_notas) html += '<div style="padding:6px 14px 10px;font-size:11px;color:var(--gt);margin-top:-6px">📝 '+last.pino_iso_notas+'</div>';
+  }
+
   if(last.notas) html += '<div style="padding:10px 14px;font-size:12px;color:var(--gt)">📝 '+last.notas+'</div>';
   html += '</div>';
   box.innerHTML = html;
@@ -1783,16 +2050,46 @@ function renderEval(){
 function viewEval(id){
   var ev = evaluaciones.find(function(e){return e.id===id;});
   if(!ev) return;
-  var domTxt = '—';
+  var lines = ['Evaluación '+formatDateShort(ev.fecha), ''];
+  lines.push('⏱ Colgado: '+(ev.colgado_seg||'—')+'s');
+  lines.push('🦵 Sentadillas 30s: '+(ev.sentadillas||'—')+' reps');
+  lines.push('🔁 Remos 30s: '+(ev.remos||'—')+' reps');
+  lines.push('💪 Flexiones 30s: '+(ev.flexiones||'—')+' reps');
   if(ev.dominadas_reps){
-    domTxt = ev.dominadas_reps + ' reps';
+    var domTxt = ev.dominadas_reps + ' reps';
     if(ev.dominadas_kg && parseFloat(ev.dominadas_kg) !== 0){
       var kg = parseFloat(ev.dominadas_kg);
       domTxt += kg > 0 ? ' (+'+kg+'kg lastre)' : ' ('+kg+'kg ayuda)';
     }
-    if(ev.dominadas_notas) domTxt += '\n     🎨 '+ev.dominadas_notas;
+    lines.push('🎯 Dominadas: '+domTxt);
+    if(ev.dominadas_notas) lines.push('    🎨 '+ev.dominadas_notas);
   }
-  alert('Evaluación '+formatDateShort(ev.fecha)+'\n\n⏱ Colgado: '+(ev.colgado_seg||'—')+'s\n🦵 Sentadillas: '+(ev.sentadillas||'—')+' reps\n🔁 Remos: '+(ev.remos||'—')+' reps\n💪 Flexiones: '+(ev.flexiones||'—')+' reps\n🎯 Dominadas: '+domTxt+'\n\n'+(ev.notas||''));
+  if(ev.press_militar_kg && ev.press_militar_num){
+    var pmTot = parseFloat(ev.press_militar_kg) * parseInt(ev.press_militar_num);
+    lines.push('🏋️ Press militar: 6 reps · '+ev.press_militar_num+'KB de '+ev.press_militar_kg+'kg = '+pmTot+'kg total');
+    if(ev.press_militar_notas) lines.push('    📝 '+ev.press_militar_notas);
+  }
+  if(ev.sentadilla_kg && ev.sentadilla_num){
+    var sqTot = parseFloat(ev.sentadilla_kg) * parseInt(ev.sentadilla_num);
+    lines.push('🦵 Sentadilla KB: 6 reps · '+ev.sentadilla_num+'KB de '+ev.sentadilla_kg+'kg = '+sqTot+'kg total');
+    if(ev.sentadilla_notas) lines.push('    📝 '+ev.sentadilla_notas);
+  }
+  if(ev.flex_nivel){
+    var lvlNames = {1:'Manos elevadas + rodillas',2:'Suelo + rodillas',3:'Elevadas sin rodillas',4:'Flexión libre',5:'Máx reps seguidas'};
+    lines.push('💪 Flexiones N'+ev.flex_nivel+': '+(ev.flex_reps||'—')+' reps ('+lvlNames[parseInt(ev.flex_nivel)]+')');
+    if(ev.flex_notas) lines.push('    📝 '+ev.flex_notas);
+  }
+  if(ev.elev_frontales_reps){
+    lines.push('🏋️ Elev. frontales: '+ev.elev_frontales_reps+' reps'+(ev.elev_frontales_kg?' @ '+ev.elev_frontales_kg+'kg':''));
+    if(ev.elev_frontales_notas) lines.push('    📝 '+ev.elev_frontales_notas);
+  }
+  if(ev.pino_iso_nivel){
+    var pinoNames = {1:'Back wall',2:'Front wall',3:'Con goma/mochila',4:'Libre'};
+    lines.push('🤸 Pino iso N'+ev.pino_iso_nivel+': '+(ev.pino_iso_seg||'—')+' seg ('+pinoNames[parseInt(ev.pino_iso_nivel)]+')');
+    if(ev.pino_iso_notas) lines.push('    📝 '+ev.pino_iso_notas);
+  }
+  if(ev.notas){ lines.push(''); lines.push('📝 '+ev.notas); }
+  alert(lines.join('\n'));
 }
 
 function openNewEval(){
@@ -1804,8 +2101,66 @@ function openNewEval(){
   document.getElementById('eval-dom-reps').value='';
   document.getElementById('eval-dom-kg').value='';
   document.getElementById('eval-dom-notas').value='';
+  document.getElementById('eval-pm-kg').value='';
+  document.getElementById('eval-pm-num').value='';
+  document.getElementById('eval-pm-notas').value='';
+  document.getElementById('eval-sq-kg').value='';
+  document.getElementById('eval-sq-num').value='';
+  document.getElementById('eval-sq-notas').value='';
+  document.getElementById('eval-flex-nivel').value='';
+  document.getElementById('eval-flex-reps-test').value='';
+  document.getElementById('eval-flex-notas').value='';
+  document.getElementById('eval-ef-reps').value='';
+  document.getElementById('eval-ef-kg').value='';
+  document.getElementById('eval-ef-notas').value='';
+  document.getElementById('eval-pino-nivel').value='';
+  document.getElementById('eval-pino-seg').value='';
+  document.getElementById('eval-pino-notas').value='';
   document.getElementById('eval-notas').value='';
+  applyEvalActivas();
   openModal('modal-eval');
+}
+
+// Aplica las evaluaciones activas del cliente para mostrar/ocultar bloques
+function applyEvalActivas(){
+  var act = getEvalActivas();
+  var mapping = {
+    'eval-block-colgado':          act.colgado !== false,
+    'eval-block-sentadillas-30s':  act.sentadillas_30s !== false,
+    'eval-block-remos-30s':        act.remos_30s !== false,
+    'eval-block-flexiones-30s':    act.flexiones_30s !== false,
+    'eval-block-dominadas':        act.dominadas !== false,
+    'eval-block-press-militar-kb': act.press_militar_kb !== false,
+    'eval-block-sentadilla-kb':    act.sentadilla_kb !== false,
+    'eval-block-flex-progresion':  act.flex_progresion !== false,
+    'eval-block-elev-frontales':   act.elev_frontales === true,
+    'eval-block-pino-iso':         act.pino_iso === true
+  };
+  Object.keys(mapping).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = mapping[id] ? '' : 'none';
+  });
+  // Hide simple-tests container rows if both children are hidden
+  ['eval-block-simple-tests','eval-block-simple-tests-2'].forEach(function(rowId){
+    var row = document.getElementById(rowId);
+    if(!row) return;
+    var visibleChildren = Array.prototype.slice.call(row.children).filter(function(c){
+      return c.style.display !== 'none';
+    });
+    row.style.display = visibleChildren.length ? '' : 'none';
+  });
+}
+
+function getEvalActivas(){
+  var defaults = {
+    colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
+    dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
+    elev_frontales:false, pino_iso:false
+  };
+  var user = currentUser && currentUser.evaluaciones_activas;
+  if(!user) return defaults;
+  var merged = Object.assign({}, defaults, user);
+  return merged;
 }
 
 async function saveEval(){
@@ -1813,14 +2168,29 @@ async function saveEval(){
   if(!fecha){showToast('⚠️ Pon la fecha');return;}
   var body={
     cliente_id:currentUser.id, fecha:fecha,
-    colgado_seg:     parseInt(document.getElementById('eval-colgado').value)||null,
-    sentadillas:     parseInt(document.getElementById('eval-sentadillas').value)||null,
-    remos:           parseInt(document.getElementById('eval-remos').value)||null,
-    flexiones:       parseInt(document.getElementById('eval-flexiones').value)||null,
-    dominadas_reps:  parseInt(document.getElementById('eval-dom-reps').value)||null,
-    dominadas_kg:    parseFloat(document.getElementById('eval-dom-kg').value)||null,
-    dominadas_notas: document.getElementById('eval-dom-notas').value.trim(),
-    notas:           document.getElementById('eval-notas').value.trim()
+    colgado_seg:         parseInt(document.getElementById('eval-colgado').value)||null,
+    sentadillas:         parseInt(document.getElementById('eval-sentadillas').value)||null,
+    remos:               parseInt(document.getElementById('eval-remos').value)||null,
+    flexiones:           parseInt(document.getElementById('eval-flexiones').value)||null,
+    dominadas_reps:      parseInt(document.getElementById('eval-dom-reps').value)||null,
+    dominadas_kg:        parseFloat(document.getElementById('eval-dom-kg').value)||null,
+    dominadas_notas:     document.getElementById('eval-dom-notas').value.trim(),
+    press_militar_kg:    parseFloat(document.getElementById('eval-pm-kg').value)||null,
+    press_militar_num:   parseInt(document.getElementById('eval-pm-num').value)||null,
+    press_militar_notas: document.getElementById('eval-pm-notas').value.trim(),
+    sentadilla_kg:       parseFloat(document.getElementById('eval-sq-kg').value)||null,
+    sentadilla_num:      parseInt(document.getElementById('eval-sq-num').value)||null,
+    sentadilla_notas:    document.getElementById('eval-sq-notas').value.trim(),
+    flex_nivel:          parseInt(document.getElementById('eval-flex-nivel').value)||null,
+    flex_reps:           parseInt(document.getElementById('eval-flex-reps-test').value)||null,
+    flex_notas:          document.getElementById('eval-flex-notas').value.trim(),
+    elev_frontales_reps: parseInt(document.getElementById('eval-ef-reps').value)||null,
+    elev_frontales_kg:   parseFloat(document.getElementById('eval-ef-kg').value)||null,
+    elev_frontales_notas:document.getElementById('eval-ef-notas').value.trim(),
+    pino_iso_nivel:      parseInt(document.getElementById('eval-pino-nivel').value)||null,
+    pino_iso_seg:        parseInt(document.getElementById('eval-pino-seg').value)||null,
+    pino_iso_notas:      document.getElementById('eval-pino-notas').value.trim(),
+    notas:               document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
   btn.textContent='Guardando...';btn.disabled=true;
@@ -1906,10 +2276,9 @@ function renderFund(){
     ? '<span class="badge-var">✅ 10×3 completado</span>'
     : '<span style="font-size:12px;color:var(--gt)">'+series.length+' series · '+total+' reps</span>';
 
-  var seriesHtml = series.map(function(s,i){
-    var col = s.reps>=3 ? 'var(--green)' : s.reps>=2 ? 'var(--yellow)' : 'var(--cream)';
-    return '<div style="background:var(--gm);border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700">S'+(i+1)+': <span style="color:'+col+'">'+s.reps+'</span></div>';
-  }).join('');
+  // Show one big number with total reps, colored by achievement
+  var seriesColor = total >= 30 ? 'var(--green)' : total >= 20 ? 'var(--yellow)' : 'var(--cream)';
+  var seriesHtml = '<div style="background:var(--gm);border-radius:8px;padding:12px 16px;font-size:20px;font-weight:700;font-family:\'Bebas Neue\',sans-serif;letter-spacing:2px;color:'+seriesColor+'">'+total+' reps totales</div>';
 
   html += '<div style="padding:0 14px 4px"><div class="section-title" style="padding:4px 0;font-size:14px">Última sesión — '+formatDateShort(last.fecha)+'</div></div>';
   html += '<div class="card">';
@@ -1926,7 +2295,7 @@ function renderFund(){
     var bars = points.map(function(r){
       var tot=(r.series||[]).reduce(function(a,s){return a+(s.reps||0);},0);
       var h=Math.max(Math.round((tot/maxReps)*100),5);
-      var comp=(r.series||[]).length>=10&&(r.series||[]).every(function(s){return s.reps>=3;});
+      var comp = tot >= 30;
       return '<div class="mini-bar" style="height:'+h+'%;background:'+(comp?'var(--green)':'var(--granate)')+'" data-val="'+tot+'"></div>';
     }).join('');
     html += '<div class="section-title">Progresión (reps totales)</div>';
@@ -1942,7 +2311,7 @@ function renderFund(){
       else if(r.variacion){ var vv=VARIACIONES_PINO.find(function(v){return v.val===r.variacion;}); param=vv?vv.label:r.variacion; }
       html += '<div style="padding:11px 14px;border-bottom:1px solid var(--gm)">'
         +'<div style="font-weight:700;font-size:13px">'+formatDateShort(r.fecha)+(param?' · '+param:'')+'</div>'
-        +'<div style="font-size:12px;color:var(--gt);margin-top:2px">'+(r.series&&r.series.length||0)+' series · '+tot+' reps</div>'
+        +'<div style="font-size:12px;color:var(--gt);margin-top:2px">'+tot+' reps totales</div>'
         +'</div>';
     });
     html += '</div>';
@@ -1959,14 +2328,22 @@ function openNewFund(){
   var body=document.getElementById('fund-modal-body');
 
   var gomasOptions = GOMAS.map(function(g){
-    return '<option value="'+g+'"'+(g===(last&&last.goma)?'selected':'')+'>'+g+'</option>';
+    return '<option value="'+g+'"'+(g===(last&&last.goma)?' selected':'')+'>'+g+'</option>';
   }).join('');
 
-  var seriesHtml='<div class="form-group"><label class="form-label">Series (10 series de 1–3 reps)</label><div class="fund-series-grid">';
-  for(var i=0;i<10;i++){
-    seriesHtml+='<div><input type="number" class="fund-serie-input" id="fund-s'+i+'" min="0" max="10" inputmode="numeric" placeholder="0"><div class="fund-serie-lbl">S'+(i+1)+'</div></div>';
+  // Compute last total reps for context
+  var lastTotalReps = 0;
+  if(last && last.series){
+    lastTotalReps = (last.series||[]).reduce(function(a,s){return a+(s.reps||0);},0);
   }
-  seriesHtml+='</div></div>';
+  var lastInfo = last ? '<div style="background:rgba(255,255,255,.04);border:1px solid var(--gl);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--gt)">Última sesión ('+formatDateShort(last.fecha)+'): <strong style="color:var(--cream)">'+lastTotalReps+' reps totales</strong>'+(lastTotalReps>=30?' ✅':'')+'</div>' : '';
+
+  // Single total reps input instead of 10 series
+  var totalHtml = '<div class="form-group">'
+    +'<label class="form-label">Reps totales del cluster (10 series)</label>'
+    +'<input type="number" class="form-input" id="fund-total-reps" min="0" max="60" inputmode="numeric" placeholder="0" style="font-size:22px;text-align:center;font-family:\'Bebas Neue\',sans-serif;letter-spacing:2px" oninput="checkFundLevelUp(this.value)">'
+    +'<div id="fund-levelup-hint" style="font-size:11px;color:var(--gt);margin-top:6px;text-align:center">Objetivo: 30 reps (10×3). Al llegar a 30 se recomienda subir de nivel.</div>'
+    +'</div>';
 
   var paramHtml='';
   if(mov.tipo==='goma'){
@@ -1975,7 +2352,7 @@ function openNewFund(){
     paramHtml='<div class="form-group"><label class="form-label">Peso kettlebell (kg)</label><input type="number" class="form-input" id="fund-peso" min="0" step="0.5" inputmode="decimal" placeholder="0" value="'+(last&&last.peso_kg||'')+'"></div>';
   } else {
     var varOptions=VARIACIONES_PINO.map(function(v){
-      return '<option value="'+v.val+'"'+(v.val===(last&&last.variacion)?'selected':'')+'>'+v.label+'</option>';
+      return '<option value="'+v.val+'"'+(v.val===(last&&last.variacion)?' selected':'')+'>'+v.label+'</option>';
     }).join('');
     var lastMode=(last&&last.variacion)?'corporal':'peso';
     paramHtml='<div class="form-group"><label class="form-label">Modalidad</label>'
@@ -1991,11 +2368,36 @@ function openNewFund(){
       +'<select class="form-select" id="fund-variacion">'+varOptions+'</select></div></div>';
   }
 
-  body.innerHTML = paramHtml+seriesHtml
+  body.innerHTML = paramHtml + lastInfo + totalHtml
     +'<div class="form-group"><label class="form-label">Notas</label>'
     +'<textarea class="form-input" id="fund-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea></div>';
 
   openModal('modal-fund');
+}
+
+function checkFundLevelUp(val){
+  var hint = document.getElementById('fund-levelup-hint');
+  var v = parseInt(val)||0;
+  if(v >= 30){
+    hint.innerHTML = '🎉 <strong style="color:var(--green)">¡10×3 completado! Es momento de subir de nivel</strong>';
+    hint.style.background='rgba(58,173,110,.12)';
+    hint.style.border='1px solid rgba(58,173,110,.4)';
+    hint.style.padding='8px';
+    hint.style.borderRadius='6px';
+    hint.style.marginTop='8px';
+  } else if(v >= 20){
+    hint.innerHTML = 'Muy cerca del objetivo — '+ (30-v) +' reps para completar 10×3';
+    hint.style.color='var(--yellow)';
+    hint.style.background='';
+    hint.style.border='';
+    hint.style.padding='';
+  } else {
+    hint.innerHTML = 'Objetivo: 30 reps (10×3). Al llegar a 30 se recomienda subir de nivel.';
+    hint.style.color='var(--gt)';
+    hint.style.background='';
+    hint.style.border='';
+    hint.style.padding='';
+  }
 }
 
 function toggleFundModalidad(){
@@ -2008,13 +2410,12 @@ async function saveFund(){
   var fecha=document.getElementById('fund-fecha').value;
   if(!fecha){showToast('⚠️ Pon la fecha');return;}
   var mov=MOVIMIENTOS[activeFundTab];
-  var series=[];
-  for(var i=0;i<10;i++){
-    var el=document.getElementById('fund-s'+i);
-    var v=el?parseInt(el.value)||0:0;
-    if(v>0) series.push({reps:v});
-  }
-  if(!series.length){showToast('⚠️ Registra al menos una serie');return;}
+  // New format: single "total reps" input represents the whole cluster
+  var totalEl = document.getElementById('fund-total-reps');
+  var totalReps = totalEl ? parseInt(totalEl.value)||0 : 0;
+  if(totalReps <= 0){ showToast('⚠️ Introduce las reps totales'); return; }
+  // Store as a single series entry with total reps
+  var series = [{reps: totalReps}];
   var goma=null,peso_kg=null,variacion=null;
   if(mov.tipo==='goma'){
     var ge=document.getElementById('fund-goma'); if(ge) goma=ge.value||null;
@@ -2034,8 +2435,8 @@ async function saveFund(){
     fundamentalesData[activeFundTab].unshift(saved[0]);
     closeModal('modal-fund');
     renderFund();
-    if(series.length>=10&&series.every(function(s){return s.reps>=3;})){
-      setTimeout(function(){showToast('🎉 10×3 completado! Hora de progresar');},500);
+    if(totalReps >= 30){
+      setTimeout(function(){showToast('🎉 ¡10×3 completado! Hora de subir de nivel');},500);
     } else {
       showToast('✅ Sesión guardada');
     }
