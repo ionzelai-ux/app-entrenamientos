@@ -766,6 +766,40 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       </div>
     </div>
 
+    <!-- REMO -->
+    <div id="eval-block-remo" style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🚣 Remo</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">Métrica principal: metros. Los demás campos son opcionales.</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tiempo (min)</label>
+          <input type="number" class="form-input" id="eval-remo-min" placeholder="0" min="0" inputmode="numeric" style="text-align:center">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tiempo (seg)</label>
+          <input type="number" class="form-input" id="eval-remo-sec" placeholder="0" min="0" max="59" inputmode="numeric" style="text-align:center">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Resistencia</label>
+          <input type="number" class="form-input" id="eval-remo-res" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Metros</label>
+          <input type="number" class="form-input" id="eval-remo-metros" placeholder="0" min="0" inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Calorías</label>
+        <input type="number" class="form-input" id="eval-remo-cal" placeholder="0" min="0" inputmode="numeric">
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-remo-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Notas generales</label>
       <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
@@ -1491,14 +1525,15 @@ const EVAL_LABELS = [
   {key:'flex_progresion',  label:'💪 Flexiones progresión'},
   {key:'elev_frontales',   label:'🏋️ Elevaciones frontales barra'},
   {key:'pino_iso',         label:'🤸 Isometría de pino'},
-  {key:'muscle_up',        label:'🚀 Muscle-up'}
+  {key:'muscle_up',        label:'🚀 Muscle-up'},
+  {key:'remo',             label:'🚣 Remo'}
 ];
 
 function renderEvalActivas(cliente){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false, muscle_up:false
+    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false
   };
   var act = Object.assign({}, defaults, cliente.evaluaciones_activas || {});
   var html = '';
@@ -2042,6 +2077,21 @@ function renderEval(){
         return s;
       },
       higherBetter:true
+    },
+    {key:'remo', activa:'remo', label:'Remo', icon:'🚣', unit:'m', color:'var(--yellow)',
+      value: function(e){ return e.remo_metros; },
+      display: function(v, e){
+        var parts = [v+' m'];
+        if(e.remo_tiempo_seg){
+          var mm = Math.floor(e.remo_tiempo_seg/60);
+          var ss = e.remo_tiempo_seg%60;
+          parts.push(mm+':'+(ss<10?'0':'')+ss);
+        }
+        if(e.remo_calorias) parts.push(e.remo_calorias+' cal');
+        if(e.remo_resistencia) parts.push('R'+e.remo_resistencia);
+        return parts.join(' · ');
+      },
+      higherBetter:true
     }
   ];
 
@@ -2167,7 +2217,21 @@ function openTestDetail(testKey){
           }
           return s;
         },
-        notesField:'muscle_up_notas'}
+        notesField:'muscle_up_notas'},
+      remo:             {label:'Remo', icon:'🚣', unit:'m',
+        value:function(e){return e.remo_metros;},
+        display:function(v,e){
+          var parts=[v+' m'];
+          if(e.remo_tiempo_seg){
+            var mm=Math.floor(e.remo_tiempo_seg/60);
+            var ss=e.remo_tiempo_seg%60;
+            parts.push(mm+':'+(ss<10?'0':'')+ss);
+          }
+          if(e.remo_calorias) parts.push(e.remo_calorias+' cal');
+          if(e.remo_resistencia) parts.push('Resistencia '+e.remo_resistencia);
+          return parts.join(' · ');
+        },
+        notesField:'remo_notas'}
     };
   }
   var def = TEST_DEFINITIONS[testKey];
@@ -2243,7 +2307,8 @@ async function deleteEvalTestEntry(evalId, testKey){
     flex_progresion:  ['flex_nivel','flex_reps','flex_notas'],
     elev_frontales:   ['elev_frontales_reps','elev_frontales_kg','elev_frontales_notas'],
     pino_iso:         ['pino_iso_nivel','pino_iso_seg','pino_iso_notas'],
-    muscle_up:        ['muscle_up_reps','muscle_up_kg','muscle_up_notas']
+    muscle_up:        ['muscle_up_reps','muscle_up_kg','muscle_up_notas'],
+    remo:             ['remo_tiempo_seg','remo_resistencia','remo_metros','remo_calorias','remo_notas']
   };
   var toClear = CLEAR_MAP[testKey] || [];
   var patch = {};
@@ -2256,7 +2321,7 @@ async function deleteEvalTestEntry(evalId, testKey){
       evCopy.colgado_seg || evCopy.sentadillas || evCopy.remos || evCopy.flexiones ||
       evCopy.dominadas_reps || evCopy.press_militar_kg || evCopy.sentadilla_kg ||
       evCopy.flex_nivel || evCopy.elev_frontales_reps || evCopy.pino_iso_nivel ||
-      evCopy.muscle_up_reps ||
+      evCopy.muscle_up_reps || evCopy.remo_metros ||
       (evCopy.notas && evCopy.notas.trim());
 
     if(!hasAnyData){
@@ -2300,6 +2365,12 @@ function openNewEval(){
   document.getElementById('eval-mu-reps').value='';
   document.getElementById('eval-mu-kg').value='';
   document.getElementById('eval-mu-notas').value='';
+  document.getElementById('eval-remo-min').value='';
+  document.getElementById('eval-remo-sec').value='';
+  document.getElementById('eval-remo-res').value='';
+  document.getElementById('eval-remo-metros').value='';
+  document.getElementById('eval-remo-cal').value='';
+  document.getElementById('eval-remo-notas').value='';
   document.getElementById('eval-notas').value='';
   applyEvalActivas();
   openModal('modal-eval');
@@ -2319,7 +2390,8 @@ function applyEvalActivas(){
     'eval-block-flex-progresion':  act.flex_progresion !== false,
     'eval-block-elev-frontales':   act.elev_frontales === true,
     'eval-block-pino-iso':         act.pino_iso === true,
-    'eval-block-muscle-up':        act.muscle_up === true
+    'eval-block-muscle-up':        act.muscle_up === true,
+    'eval-block-remo':             act.remo === true
   };
   Object.keys(mapping).forEach(function(id){
     var el = document.getElementById(id);
@@ -2340,7 +2412,7 @@ function getEvalActivas(){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false, muscle_up:false
+    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false
   };
   var user = currentUser && currentUser.evaluaciones_activas;
   if(!user) return defaults;
@@ -2378,6 +2450,16 @@ async function saveEval(){
     muscle_up_reps:      parseInt(document.getElementById('eval-mu-reps').value)||null,
     muscle_up_kg:        (document.getElementById('eval-mu-kg').value !== '' ? parseFloat(document.getElementById('eval-mu-kg').value) : null),
     muscle_up_notas:     document.getElementById('eval-mu-notas').value.trim(),
+    remo_tiempo_seg:     (function(){
+      var m = parseInt(document.getElementById('eval-remo-min').value)||0;
+      var s = parseInt(document.getElementById('eval-remo-sec').value)||0;
+      var total = m*60 + s;
+      return total > 0 ? total : null;
+    })(),
+    remo_resistencia:    parseInt(document.getElementById('eval-remo-res').value)||null,
+    remo_metros:         parseInt(document.getElementById('eval-remo-metros').value)||null,
+    remo_calorias:       parseInt(document.getElementById('eval-remo-cal').value)||null,
+    remo_notas:          document.getElementById('eval-remo-notas').value.trim(),
     notas:               document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
