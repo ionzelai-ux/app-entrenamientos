@@ -1826,11 +1826,11 @@ function todayISO(){
 function formatDateShort(d){ if(!d) return'—'; return new Date(d+'T12:00:00').toLocaleDateString('es',{day:'numeric',month:'short'}); }
 function openModal(id){ 
   document.getElementById(id).classList.add('open'); 
-  if(id === 'modal-sess') updateRestFabVisibility();
+  if(id === 'modal-session') updateRestFabVisibility();
 }
 function closeModal(id){ 
   document.getElementById(id).classList.remove('open'); 
-  if(id === 'modal-sess') updateRestFabVisibility();
+  if(id === 'modal-session') updateRestFabVisibility();
 }
 
 document.querySelectorAll('.modal-overlay').forEach(o=>{
@@ -2881,7 +2881,8 @@ function setRestDefault(secs){
 
 // Show/hide the fab based on session modal open state
 function updateRestFabVisibility(){
-  var sessOpen = document.getElementById('modal-sess').classList.contains('open');
+  var sessEl = document.getElementById('modal-session');
+  var sessOpen = sessEl ? sessEl.classList.contains('open') : false;
   document.getElementById('rest-fab').style.display = sessOpen ? 'flex' : 'none';
   if(!sessOpen){
     // Close panel and reset when modal closes
