@@ -746,6 +746,26 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       </div>
     </div>
 
+    <!-- MUSCLE-UP -->
+    <div id="eval-block-muscle-up" style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--granate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🚀 Muscle-up</div>
+      <div style="font-size:11px;color:var(--gt);margin-bottom:10px">Peso: negativo si usa goma (ayuda), 0 si peso corporal, positivo si con lastre.</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Repeticiones</label>
+          <input type="number" class="form-input" id="eval-mu-reps" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Kg (ayuda −/lastre +)</label>
+          <input type="number" class="form-input" id="eval-mu-kg" placeholder="0" step="0.5" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-mu-notas" placeholder="Ej: goma verde, sin ayuda, +5kg lastre...">
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Notas generales</label>
       <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
@@ -1470,14 +1490,15 @@ const EVAL_LABELS = [
   {key:'sentadilla_kb',    label:'🦵 Sentadilla KB (6 reps)'},
   {key:'flex_progresion',  label:'💪 Flexiones progresión'},
   {key:'elev_frontales',   label:'🏋️ Elevaciones frontales barra'},
-  {key:'pino_iso',         label:'🤸 Isometría de pino'}
+  {key:'pino_iso',         label:'🤸 Isometría de pino'},
+  {key:'muscle_up',        label:'🚀 Muscle-up'}
 ];
 
 function renderEvalActivas(cliente){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false
+    elev_frontales:false, pino_iso:false, muscle_up:false
   };
   var act = Object.assign({}, defaults, cliente.evaluaciones_activas || {});
   var html = '';
@@ -2007,6 +2028,20 @@ function renderEval(){
         return (e.pino_iso_seg||0)+' seg <span style="color:var(--gt);font-size:12px">('+ (pinoNames[parseInt(e.pino_iso_nivel)]||'N'+e.pino_iso_nivel) +')</span>';
       },
       higherBetter:true
+    },
+    {key:'muscle_up', activa:'muscle_up', label:'Muscle-up', icon:'🚀', unit:'reps', color:'var(--granate)',
+      value: function(e){ return e.muscle_up_reps; },
+      display: function(v, e){
+        var s = v+' reps';
+        if(e.muscle_up_kg !== null && e.muscle_up_kg !== undefined && e.muscle_up_kg !== ''){
+          var kg = parseFloat(e.muscle_up_kg);
+          if(kg > 0) s += ' (+'+kg+'kg lastre)';
+          else if(kg < 0) s += ' ('+kg+'kg ayuda)';
+          else s += ' (peso corporal)';
+        }
+        return s;
+      },
+      higherBetter:true
     }
   ];
 
@@ -2119,7 +2154,20 @@ function openTestDetail(testKey){
           var pinoNames={1:'N1 Back wall',2:'N2 Front wall',3:'N3 Goma/mochila',4:'N4 Libre'};
           return (e.pino_iso_seg||0)+' seg · '+(pinoNames[parseInt(e.pino_iso_nivel)]||'N'+e.pino_iso_nivel);
         },
-        notesField:'pino_iso_notas'}
+        notesField:'pino_iso_notas'},
+      muscle_up:        {label:'Muscle-up', icon:'🚀', unit:'reps',
+        value:function(e){return e.muscle_up_reps;},
+        display:function(v,e){
+          var s=v+' reps';
+          if(e.muscle_up_kg !== null && e.muscle_up_kg !== undefined && e.muscle_up_kg !== ''){
+            var kg=parseFloat(e.muscle_up_kg);
+            if(kg>0) s+=' (+'+kg+'kg lastre)';
+            else if(kg<0) s+=' ('+kg+'kg ayuda)';
+            else s+=' (peso corporal)';
+          }
+          return s;
+        },
+        notesField:'muscle_up_notas'}
     };
   }
   var def = TEST_DEFINITIONS[testKey];
@@ -2194,7 +2242,8 @@ async function deleteEvalTestEntry(evalId, testKey){
     sentadilla_kb:    ['sentadilla_kg','sentadilla_num','sentadilla_notas'],
     flex_progresion:  ['flex_nivel','flex_reps','flex_notas'],
     elev_frontales:   ['elev_frontales_reps','elev_frontales_kg','elev_frontales_notas'],
-    pino_iso:         ['pino_iso_nivel','pino_iso_seg','pino_iso_notas']
+    pino_iso:         ['pino_iso_nivel','pino_iso_seg','pino_iso_notas'],
+    muscle_up:        ['muscle_up_reps','muscle_up_kg','muscle_up_notas']
   };
   var toClear = CLEAR_MAP[testKey] || [];
   var patch = {};
@@ -2207,6 +2256,7 @@ async function deleteEvalTestEntry(evalId, testKey){
       evCopy.colgado_seg || evCopy.sentadillas || evCopy.remos || evCopy.flexiones ||
       evCopy.dominadas_reps || evCopy.press_militar_kg || evCopy.sentadilla_kg ||
       evCopy.flex_nivel || evCopy.elev_frontales_reps || evCopy.pino_iso_nivel ||
+      evCopy.muscle_up_reps ||
       (evCopy.notas && evCopy.notas.trim());
 
     if(!hasAnyData){
@@ -2247,6 +2297,9 @@ function openNewEval(){
   document.getElementById('eval-pino-nivel').value='';
   document.getElementById('eval-pino-seg').value='';
   document.getElementById('eval-pino-notas').value='';
+  document.getElementById('eval-mu-reps').value='';
+  document.getElementById('eval-mu-kg').value='';
+  document.getElementById('eval-mu-notas').value='';
   document.getElementById('eval-notas').value='';
   applyEvalActivas();
   openModal('modal-eval');
@@ -2265,7 +2318,8 @@ function applyEvalActivas(){
     'eval-block-sentadilla-kb':    act.sentadilla_kb !== false,
     'eval-block-flex-progresion':  act.flex_progresion !== false,
     'eval-block-elev-frontales':   act.elev_frontales === true,
-    'eval-block-pino-iso':         act.pino_iso === true
+    'eval-block-pino-iso':         act.pino_iso === true,
+    'eval-block-muscle-up':        act.muscle_up === true
   };
   Object.keys(mapping).forEach(function(id){
     var el = document.getElementById(id);
@@ -2286,7 +2340,7 @@ function getEvalActivas(){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false
+    elev_frontales:false, pino_iso:false, muscle_up:false
   };
   var user = currentUser && currentUser.evaluaciones_activas;
   if(!user) return defaults;
@@ -2321,6 +2375,9 @@ async function saveEval(){
     pino_iso_nivel:      parseInt(document.getElementById('eval-pino-nivel').value)||null,
     pino_iso_seg:        parseInt(document.getElementById('eval-pino-seg').value)||null,
     pino_iso_notas:      document.getElementById('eval-pino-notas').value.trim(),
+    muscle_up_reps:      parseInt(document.getElementById('eval-mu-reps').value)||null,
+    muscle_up_kg:        (document.getElementById('eval-mu-kg').value !== '' ? parseFloat(document.getElementById('eval-mu-kg').value) : null),
+    muscle_up_notas:     document.getElementById('eval-mu-notas').value.trim(),
     notas:               document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
