@@ -298,6 +298,20 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .rest-actions{display:flex;gap:6px}
 .rest-actions .btn{flex:1;padding:10px;font-size:12px}
 
+
+/* ── SIGNED NUMBER INPUT (permite negativos en móvil) ── */
+.signed-input-wrap{display:flex;gap:6px;align-items:stretch}
+.signed-input-wrap input{flex:1;min-width:0}
+.sign-toggle{
+  flex-shrink:0;width:44px;
+  background:var(--gm);border:1.5px solid var(--gl);border-radius:8px;
+  color:var(--cream);font-family:'Bebas Neue',sans-serif;font-size:20px;
+  cursor:pointer;transition:all .15s;padding:0;
+}
+.sign-toggle:active{transform:scale(.95)}
+.sign-toggle.positive{background:rgba(58,173,110,.15);border-color:var(--green);color:var(--green)}
+.sign-toggle.negative{background:rgba(208,48,48,.15);border-color:var(--red);color:var(--red)}
+
 /* ── PLACEHOLDER PREVIO ── */
 .prev-ph::placeholder { color: rgba(248,241,227,0.35); font-weight: 500; }
 
@@ -395,6 +409,10 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
         <div class="header-sub">Panel de gestión</div>
       </div>
       <span class="header-badge">ADMIN</span>
+    </div>
+    <div class="admin-section">
+      <h3>🏆 Reto Semanal</h3>
+      <button class="btn btn-primary" style="margin-bottom:12px;background:linear-gradient(135deg,var(--granate),var(--yellow))" onclick="openRetosAdmin()">Gestionar reto de la semana</button>
     </div>
     <div class="admin-section">
       <h3>Clientes</h3>
@@ -663,9 +681,14 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     </div>
     <div class="info-box">Test de <strong>30 segundos</strong> para sentadillas, remos y flexiones. El colgado es tiempo máximo.</div>
     <div class="form-row" id="eval-block-simple-tests">
-      <div class="form-group" id="eval-block-colgado">
+      <div class="form-group" id="eval-block-colgado" style="flex:1">
         <label class="form-label">⏱ Colgado (seg)</label>
         <input type="number" class="form-input" id="eval-colgado" placeholder="0" min="0" inputmode="numeric">
+        <div style="margin-top:6px">
+          <label class="form-label" style="font-size:10px">Lastre (kg, opcional)</label>
+          <input type="number" class="form-input" id="eval-colgado-kg" placeholder="0" step="0.5" min="0" inputmode="decimal" style="padding:6px 10px;font-size:13px">
+          <div style="font-size:9px;color:var(--gt);margin-top:2px">A partir de 120s empieza a lastrar</div>
+        </div>
       </div>
       <div class="form-group" id="eval-block-sentadillas-30s">
         <label class="form-label">🦵 Sentadillas (30s)</label>
@@ -690,8 +713,12 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
           <input type="number" class="form-input" id="eval-dom-reps" placeholder="0" min="0" inputmode="numeric">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Kg (ayuda −/lastre +)</label>
-          <input type="number" class="form-input" id="eval-dom-kg" placeholder="0" step="0.5" inputmode="decimal">
+          <label class="form-label">Kg (pulsa +/− para cambiar signo)</label>
+          <div class="signed-input-wrap">
+            <button type="button" class="sign-toggle positive" id="eval-dom-kg-sign" onclick="toggleSign('eval-dom-kg-sign','eval-dom-kg')">+</button>
+            <input type="number" class="form-input" id="eval-dom-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+          </div>
+          <div style="font-size:10px;color:var(--gt);margin-top:4px">− goma (ayuda) · + lastre · Objetivo: 8 reps para cambiar goma</div>
         </div>
       </div>
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
@@ -769,9 +796,56 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
           <input type="number" class="form-input" id="eval-flex-reps-test" placeholder="0" min="0" inputmode="numeric">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Notas</label>
-          <input type="text" class="form-input" id="eval-flex-notas" placeholder="Observaciones...">
+          <label class="form-label">Kg (goma −/lastre +)</label>
+          <div class="signed-input-wrap">
+            <button type="button" class="sign-toggle positive" id="eval-flex-kg-sign" onclick="toggleSign('eval-flex-kg-sign','eval-flex-kg')">+</button>
+            <input type="number" class="form-input" id="eval-flex-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+          </div>
         </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-flex-notas" placeholder="Observaciones...">
+      </div>
+      <div style="font-size:11px;color:var(--yellow);margin-top:8px;text-align:center;padding:6px;background:rgba(232,160,32,.1);border-radius:6px">🎯 Objetivo: 20 reps en el nivel actual para subir de nivel</div>
+    </div>
+
+    <!-- SENTADILLA ISOMÉTRICA -->
+    <div id="eval-block-sent-iso" style="background:rgba(58,173,110,.08);border:1px solid rgba(58,173,110,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🦵 Sentadilla isométrica</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tiempo aguantado (seg)</label>
+          <input type="number" class="form-input" id="eval-sentiso-seg" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Lastre (kg, opcional)</label>
+          <input type="number" class="form-input" id="eval-sentiso-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--gt);margin-top:6px">A partir de 60s empieza a lastrar</div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-sentiso-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <!-- HOLLOW BODY -->
+    <div id="eval-block-hollow" style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🤲 Hollow body</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Tiempo aguantado (seg)</label>
+          <input type="number" class="form-input" id="eval-hollow-seg" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Lastre (kg, opcional)</label>
+          <input type="number" class="form-input" id="eval-hollow-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-hollow-notas" placeholder="Observaciones...">
       </div>
     </div>
 
@@ -830,8 +904,12 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
           <input type="number" class="form-input" id="eval-mu-reps" placeholder="0" min="0" inputmode="numeric">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">Kg (ayuda −/lastre +)</label>
-          <input type="number" class="form-input" id="eval-mu-kg" placeholder="0" step="0.5" inputmode="decimal">
+          <label class="form-label">Kg (pulsa +/− para cambiar signo)</label>
+          <div class="signed-input-wrap">
+            <button type="button" class="sign-toggle positive" id="eval-mu-kg-sign" onclick="toggleSign('eval-mu-kg-sign','eval-mu-kg')">+</button>
+            <input type="number" class="form-input" id="eval-mu-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+          </div>
+          <div style="font-size:10px;color:var(--gt);margin-top:4px">− goma (ayuda) · 0 peso corporal · + lastre</div>
         </div>
       </div>
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
@@ -940,6 +1018,28 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
   </div>
 </div>
 
+<!-- MODAL: RETOS SEMANALES ADMIN -->
+<div class="modal-overlay" id="modal-retos-admin">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🏆 Reto Semanal</div>
+      <button class="modal-close" onclick="closeModal('modal-retos-admin')">✕</button>
+    </div>
+    <div id="retos-admin-body"></div>
+  </div>
+</div>
+
+<!-- MODAL: RANKING -->
+<div class="modal-overlay" id="modal-ranking">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ranking-title">🏆 Ranking</div>
+      <button class="modal-close" onclick="closeModal('modal-ranking')">✕</button>
+    </div>
+    <div id="ranking-body"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1009,8 +1109,17 @@ async function initApp() {
   document.getElementById('app').style.display='block';
   document.getElementById('hdr-name').textContent = currentUser.nombre;
   if(currentUser.es_admin) document.getElementById('nav-admin').classList.remove('hide');
-  await Promise.all([loadActiveCiclo(), loadSessions(), loadEvaluaciones(), loadFundamentales()]);
-  renderTabla();
+  await Promise.all([loadActiveCiclo(), loadSessions(), loadEvaluaciones(), loadFundamentales(), loadRetos()]);
+  applyClientTypeNav();
+  // Para tipos simple, ir directo a eval; para rack/online, tabla
+  var tipo = currentUser.tipo || 'rack';
+  if(tipo === 'clase' || tipo === 'wellhub'){
+    var evalBtn = document.querySelector('.nav-btn[onclick*="\'eval\'"]');
+    if(evalBtn){ renderEval(); showScreen('eval', evalBtn); }
+    else renderTabla();
+  } else {
+    renderTabla();
+  }
 }
 
 async function loadActiveCiclo() {
@@ -1587,6 +1696,9 @@ function openNewClient(){
   document.getElementById('cl-usuario').value='';
   document.getElementById('cl-pass').value='';
   document.getElementById('cl-activo').value='true';
+  document.getElementById('cl-tipo').value='rack';
+  document.getElementById('cl-consent').checked = false;
+  document.getElementById('cl-apodo').value = '';
   document.getElementById('btn-toggle-client').classList.add('hide');
   document.getElementById('ciclos-section').classList.add('hide');
   document.getElementById('evaluaciones-activas-section').classList.add('hide');
@@ -1602,6 +1714,9 @@ async function openEditClient(id){
     document.getElementById('cl-usuario').value=c.usuario;
     document.getElementById('cl-pass').value=c.password;
     document.getElementById('cl-activo').value=String(c.activo);
+    document.getElementById('cl-tipo').value = c.tipo || 'rack';
+    document.getElementById('cl-consent').checked = c.consentimiento_publico === true;
+    document.getElementById('cl-apodo').value = c.apodo_publico || '';
     const togBtn=document.getElementById('btn-toggle-client');
     togBtn.classList.remove('hide');
     togBtn.textContent=c.activo?'🔴 Bloquear acceso':'✅ Activar acceso';
@@ -1629,14 +1744,17 @@ const EVAL_LABELS = [
   {key:'elev_frontales',   label:'🏋️ Elevaciones frontales barra'},
   {key:'pino_iso',         label:'🤸 Isometría de pino'},
   {key:'muscle_up',        label:'🚀 Muscle-up'},
-  {key:'remo',             label:'🚣 Remo'}
+  {key:'remo',             label:'🚣 Remo'},
+  {key:'sent_iso',         label:'🦵 Sentadilla isométrica'},
+  {key:'hollow',           label:'🤲 Hollow body'}
 ];
 
 function renderEvalActivas(cliente){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false
+    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false,
+    sent_iso:true, hollow:true
   };
   var act = Object.assign({}, defaults, cliente.evaluaciones_activas || {});
   var html = '';
@@ -1688,10 +1806,21 @@ async function saveClient(){
   btn.textContent='Guardando...'; btn.disabled=true;
   try {
     if(editClientId){
-      await sbPatch('clientes',`id=eq.${editClientId}`,{nombre,usuario,password:pass,activo});
+      await sbPatch('clientes',`id=eq.${editClientId}`,{
+        nombre,usuario,password:pass,activo,
+        tipo:document.getElementById('cl-tipo').value||'rack',
+        consentimiento_publico: document.getElementById('cl-consent').checked,
+        apodo_publico: document.getElementById('cl-apodo').value.trim()
+      });
       showToast('✅ Cliente actualizado');
     } else {
-      const [newClient]=await sbPost('clientes',{nombre,usuario,password:pass,activo,es_admin:false,programa:[]});
+      const [newClient]=await sbPost('clientes',{
+        nombre,usuario,password:pass,activo,
+        tipo:document.getElementById('cl-tipo').value||'rack',
+        consentimiento_publico: document.getElementById('cl-consent').checked,
+        apodo_publico: document.getElementById('cl-apodo').value.trim(),
+        es_admin:false,programa:[]
+      });
       editClientId=newClient.id;
       document.getElementById('ciclos-section').classList.remove('hide');
       await loadCiclosAdmin(editClientId);
@@ -2076,6 +2205,80 @@ function updateCronoDisplay() {
 }
 
 
+
+
+// ═══════════════════════════════════════════════
+// DISPLAY NAME PÚBLICO (para ranking / muro)
+// ═══════════════════════════════════════════════
+function getPublicDisplayName(cliente){
+  if(!cliente) return '?';
+  // Si tiene consentimiento público, nombre completo
+  if(cliente.consentimiento_publico === true){
+    return cliente.nombre || '?';
+  }
+  // Si tiene apodo, usa apodo
+  if(cliente.apodo_publico && cliente.apodo_publico.trim()){
+    return cliente.apodo_publico.trim();
+  }
+  // Si no, iniciales del nombre
+  var nombre = (cliente.nombre || '?').trim();
+  var parts = nombre.split(/\s+/);
+  if(parts.length >= 2){
+    return (parts[0][0] + '.' + parts[1][0] + '.').toUpperCase();
+  }
+  return (parts[0][0] || '?').toUpperCase() + '.';
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS PARA INPUTS CON SIGNO (kg negativos en móvil)
+// ═══════════════════════════════════════════════
+function toggleSign(btnId, inputId){
+  var btn = document.getElementById(btnId);
+  var inp = document.getElementById(inputId);
+  var isPositive = btn.classList.contains('positive');
+  if(isPositive){
+    btn.classList.remove('positive');
+    btn.classList.add('negative');
+    btn.textContent = '−';
+  } else {
+    btn.classList.remove('negative');
+    btn.classList.add('positive');
+    btn.textContent = '+';
+  }
+}
+function getSignedValue(btnId, inputId){
+  var btn = document.getElementById(btnId);
+  var inp = document.getElementById(inputId);
+  var val = inp.value;
+  if(val === '' || val === null) return null;
+  var num = parseFloat(val);
+  if(isNaN(num)) return null;
+  return btn.classList.contains('negative') ? -Math.abs(num) : Math.abs(num);
+}
+function setSignedValue(btnId, inputId, value){
+  var btn = document.getElementById(btnId);
+  var inp = document.getElementById(inputId);
+  if(value === null || value === undefined || value === ''){
+    inp.value = '';
+    btn.classList.remove('negative');
+    btn.classList.add('positive');
+    btn.textContent = '+';
+    return;
+  }
+  var num = parseFloat(value);
+  if(num < 0){
+    btn.classList.remove('positive');
+    btn.classList.add('negative');
+    btn.textContent = '−';
+    inp.value = Math.abs(num);
+  } else {
+    btn.classList.remove('negative');
+    btn.classList.add('positive');
+    btn.textContent = '+';
+    inp.value = num;
+  }
+}
+
 // ═══════════════════════════════════════════════
 // EVALUACIONES
 // ═══════════════════════════════════════════════
@@ -2102,7 +2305,11 @@ function renderEval(){
   var TESTS = [
     {key:'colgado', activa:'colgado', label:'Colgado en barra', icon:'⏱', unit:'seg', color:'var(--yellow)',
       value: function(e){ return e.colgado_seg; },
-      display: function(v){ return v+' seg'; },
+      display: function(v, e){
+        var s = v+' seg';
+        if(e && e.colgado_kg && parseFloat(e.colgado_kg) > 0) s += ' <span style="color:var(--yellow);font-size:11px">+'+e.colgado_kg+'kg</span>';
+        return s;
+      },
       higherBetter:true
     },
     {key:'sentadillas_30s', activa:'sentadillas_30s', label:'Sentadillas 30s', icon:'🦵', unit:'reps', color:'var(--granate)',
@@ -2152,7 +2359,13 @@ function renderEval(){
       value: function(e){ return e.flex_nivel ? (parseInt(e.flex_nivel)*100 + (parseInt(e.flex_reps)||0)) : null; },
       display: function(v, e){
         var lvlNames = {1:'N1 Manos elev+rodillas', 2:'N2 Suelo+rodillas', 3:'N3 Elev sin rodillas', 4:'N4 Flexión libre', 5:'N5 Máx reps'};
-        return (e.flex_reps||0)+' reps <span style="color:var(--gt);font-size:12px">('+ (lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel) +')</span>';
+        var s = (e.flex_reps||0)+' reps <span style="color:var(--gt);font-size:12px">('+ (lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel) +')</span>';
+        if(e.flex_kg !== null && e.flex_kg !== undefined && e.flex_kg !== ''){
+          var kg = parseFloat(e.flex_kg);
+          if(kg > 0) s += ' <span style="color:var(--yellow);font-size:11px">+'+kg+'kg</span>';
+          else if(kg < 0) s += ' <span style="color:var(--gt);font-size:11px">'+kg+'kg ayuda</span>';
+        }
+        return s;
       },
       higherBetter:true
     },
@@ -2201,10 +2414,28 @@ function renderEval(){
         return parts.join(' · ');
       },
       higherBetter:true
+    },
+    {key:'sent_iso', activa:'sent_iso', label:'Sentadilla isométrica', icon:'🦵', unit:'seg', color:'var(--green)',
+      value: function(e){ return e.sent_iso_seg; },
+      display: function(v, e){
+        var s = v+' seg';
+        if(e.sent_iso_kg && parseFloat(e.sent_iso_kg) > 0) s += ' <span style="color:var(--yellow);font-size:11px">+'+e.sent_iso_kg+'kg</span>';
+        return s;
+      },
+      higherBetter:true
+    },
+    {key:'hollow', activa:'hollow', label:'Hollow body', icon:'🤲', unit:'seg', color:'var(--yellow)',
+      value: function(e){ return e.hollow_seg; },
+      display: function(v, e){
+        var s = v+' seg';
+        if(e.hollow_kg && parseFloat(e.hollow_kg) > 0) s += ' <span style="color:var(--yellow);font-size:11px">+'+e.hollow_kg+'kg</span>';
+        return s;
+      },
+      higherBetter:true
     }
   ];
 
-  var html = '<div style="padding:6px 14px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:1px;font-weight:700">Tus tests</div>';
+  var html = renderRetoBanner() + '<div style="padding:6px 14px;font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:1px;font-weight:700">Tus tests</div>';
   var anyRendered = false;
 
   TESTS.forEach(function(test){
@@ -2276,7 +2507,7 @@ function openTestDetail(testKey){
   // Rebuild TEST_DEFINITIONS lazily using same shape as in renderEval
   if(!TEST_DEFINITIONS){
     TEST_DEFINITIONS = {
-      colgado:          {label:'Colgado en barra', icon:'⏱', unit:'seg',  value:function(e){return e.colgado_seg;},           display:function(v,e){return v+' seg';}, notesField:'notas'},
+      colgado:          {label:'Colgado en barra', icon:'⏱', unit:'seg',  value:function(e){return e.colgado_seg;},           display:function(v,e){var s=v+' seg';if(e.colgado_kg && parseFloat(e.colgado_kg)>0)s+=' +'+e.colgado_kg+'kg lastre';return s;}, notesField:'notas'},
       sentadillas_30s:  {label:'Sentadillas 30s',  icon:'🦵', unit:'reps', value:function(e){return e.sentadillas;},           display:function(v,e){return v+' reps';}, notesField:'notas'},
       remos_30s:        {label:'Remos anillas 30s',icon:'🔁', unit:'reps', value:function(e){return e.remos;},                 display:function(v,e){return v+' reps';}, notesField:'notas'},
       flexiones_30s:    {label:'Flexiones 30s',    icon:'💪', unit:'reps', value:function(e){return e.flexiones;},             display:function(v,e){return v+' reps';}, notesField:'notas'},
@@ -2300,7 +2531,13 @@ function openTestDetail(testKey){
         value:function(e){return e.flex_nivel?(parseInt(e.flex_nivel)*100+(parseInt(e.flex_reps)||0)):null;},
         display:function(v,e){
           var lvlNames={1:'N1 Manos elev+rodillas',2:'N2 Suelo+rodillas',3:'N3 Elev sin rodillas',4:'N4 Flexión libre',5:'N5 Máx reps'};
-          return (e.flex_reps||0)+' reps · '+(lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel);
+          var s = (e.flex_reps||0)+' reps · '+(lvlNames[parseInt(e.flex_nivel)]||'N'+e.flex_nivel);
+          if(e.flex_kg !== null && e.flex_kg !== undefined && e.flex_kg !== ''){
+            var kg=parseFloat(e.flex_kg);
+            if(kg>0) s+=' · +'+kg+'kg lastre';
+            else if(kg<0) s+=' · '+kg+'kg ayuda';
+          }
+          return s;
         },
         notesField:'flex_notas'},
       elev_frontales:   {label:'Elev. frontales', icon:'🏋️', unit:'reps',
@@ -2340,7 +2577,15 @@ function openTestDetail(testKey){
           if(e.remo_resistencia) parts.push('Resistencia '+e.remo_resistencia);
           return parts.join(' · ');
         },
-        notesField:'remo_notas'}
+        notesField:'remo_notas'},
+      sent_iso:         {label:'Sentadilla isométrica', icon:'🦵', unit:'seg',
+        value:function(e){return e.sent_iso_seg;},
+        display:function(v,e){var s=v+' seg';if(e.sent_iso_kg && parseFloat(e.sent_iso_kg)>0)s+=' +'+e.sent_iso_kg+'kg lastre';return s;},
+        notesField:'sent_iso_notas'},
+      hollow:           {label:'Hollow body', icon:'🤲', unit:'seg',
+        value:function(e){return e.hollow_seg;},
+        display:function(v,e){var s=v+' seg';if(e.hollow_kg && parseFloat(e.hollow_kg)>0)s+=' +'+e.hollow_kg+'kg lastre';return s;},
+        notesField:'hollow_notas'}
     };
   }
   var def = TEST_DEFINITIONS[testKey];
@@ -2406,18 +2651,20 @@ async function deleteEvalTestEntry(evalId, testKey){
 
   // Fields to clear per test
   var CLEAR_MAP = {
-    colgado:          ['colgado_seg'],
+    colgado:          ['colgado_seg','colgado_kg'],
     sentadillas_30s:  ['sentadillas'],
     remos_30s:        ['remos'],
     flexiones_30s:    ['flexiones'],
     dominadas:        ['dominadas_reps','dominadas_kg','dominadas_notas'],
     press_militar_kb: ['press_militar_kg','press_militar_num','press_militar_notas'],
     sentadilla_kb:    ['sentadilla_kg','sentadilla_num','sentadilla_notas'],
-    flex_progresion:  ['flex_nivel','flex_reps','flex_notas'],
+    flex_progresion:  ['flex_nivel','flex_reps','flex_notas','flex_kg'],
     elev_frontales:   ['elev_frontales_reps','elev_frontales_kg','elev_frontales_notas'],
     pino_iso:         ['pino_iso_nivel','pino_iso_seg','pino_iso_notas'],
     muscle_up:        ['muscle_up_reps','muscle_up_kg','muscle_up_notas'],
-    remo:             ['remo_tiempo_seg','remo_resistencia','remo_metros','remo_calorias','remo_notas']
+    remo:             ['remo_tiempo_seg','remo_resistencia','remo_metros','remo_calorias','remo_notas'],
+    sent_iso:         ['sent_iso_seg','sent_iso_kg','sent_iso_notas'],
+    hollow:           ['hollow_seg','hollow_kg','hollow_notas']
   };
   var toClear = CLEAR_MAP[testKey] || [];
   var patch = {};
@@ -2430,7 +2677,7 @@ async function deleteEvalTestEntry(evalId, testKey){
       evCopy.colgado_seg || evCopy.sentadillas || evCopy.remos || evCopy.flexiones ||
       evCopy.dominadas_reps || evCopy.press_militar_kg || evCopy.sentadilla_kg ||
       evCopy.flex_nivel || evCopy.elev_frontales_reps || evCopy.pino_iso_nivel ||
-      evCopy.muscle_up_reps || evCopy.remo_metros ||
+      evCopy.muscle_up_reps || evCopy.remo_metros || evCopy.sent_iso_seg || evCopy.hollow_seg ||
       (evCopy.notas && evCopy.notas.trim());
 
     if(!hasAnyData){
@@ -2450,11 +2697,12 @@ async function deleteEvalTestEntry(evalId, testKey){
 function openNewEval(){
   document.getElementById('eval-fecha').value = todayISO();
   document.getElementById('eval-colgado').value='';
+  document.getElementById('eval-colgado-kg').value='';
   document.getElementById('eval-sentadillas').value='';
   document.getElementById('eval-remos').value='';
   document.getElementById('eval-flexiones').value='';
   document.getElementById('eval-dom-reps').value='';
-  document.getElementById('eval-dom-kg').value='';
+  setSignedValue('eval-dom-kg-sign','eval-dom-kg', null);
   document.getElementById('eval-dom-notas').value='';
   document.getElementById('eval-pm-kg').value='';
   document.getElementById('eval-pm-num').value='';
@@ -2465,6 +2713,7 @@ function openNewEval(){
   document.getElementById('eval-flex-nivel').value='';
   document.getElementById('eval-flex-reps-test').value='';
   document.getElementById('eval-flex-notas').value='';
+  setSignedValue('eval-flex-kg-sign','eval-flex-kg', null);
   document.getElementById('eval-ef-reps').value='';
   document.getElementById('eval-ef-kg').value='';
   document.getElementById('eval-ef-notas').value='';
@@ -2472,7 +2721,7 @@ function openNewEval(){
   document.getElementById('eval-pino-seg').value='';
   document.getElementById('eval-pino-notas').value='';
   document.getElementById('eval-mu-reps').value='';
-  document.getElementById('eval-mu-kg').value='';
+  setSignedValue('eval-mu-kg-sign','eval-mu-kg', null);
   document.getElementById('eval-mu-notas').value='';
   document.getElementById('eval-remo-min').value='';
   document.getElementById('eval-remo-sec').value='';
@@ -2480,6 +2729,12 @@ function openNewEval(){
   document.getElementById('eval-remo-metros').value='';
   document.getElementById('eval-remo-cal').value='';
   document.getElementById('eval-remo-notas').value='';
+  document.getElementById('eval-sentiso-seg').value='';
+  document.getElementById('eval-sentiso-kg').value='';
+  document.getElementById('eval-sentiso-notas').value='';
+  document.getElementById('eval-hollow-seg').value='';
+  document.getElementById('eval-hollow-kg').value='';
+  document.getElementById('eval-hollow-notas').value='';
   document.getElementById('eval-notas').value='';
   applyEvalActivas();
   openModal('modal-eval');
@@ -2500,7 +2755,9 @@ function applyEvalActivas(){
     'eval-block-elev-frontales':   act.elev_frontales === true,
     'eval-block-pino-iso':         act.pino_iso === true,
     'eval-block-muscle-up':        act.muscle_up === true,
-    'eval-block-remo':             act.remo === true
+    'eval-block-remo':             act.remo === true,
+    'eval-block-sent-iso':         act.sent_iso !== false,
+    'eval-block-hollow':           act.hollow !== false
   };
   Object.keys(mapping).forEach(function(id){
     var el = document.getElementById(id);
@@ -2521,7 +2778,8 @@ function getEvalActivas(){
   var defaults = {
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
-    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false
+    elev_frontales:false, pino_iso:false, muscle_up:false, remo:false,
+    sent_iso:true, hollow:true
   };
   var user = currentUser && currentUser.evaluaciones_activas;
   if(!user) return defaults;
@@ -2535,11 +2793,12 @@ async function saveEval(){
   var body={
     cliente_id:currentUser.id, fecha:fecha,
     colgado_seg:         parseInt(document.getElementById('eval-colgado').value)||null,
+    colgado_kg:          parseFloat(document.getElementById('eval-colgado-kg').value)||null,
     sentadillas:         parseInt(document.getElementById('eval-sentadillas').value)||null,
     remos:               parseInt(document.getElementById('eval-remos').value)||null,
     flexiones:           parseInt(document.getElementById('eval-flexiones').value)||null,
     dominadas_reps:      parseInt(document.getElementById('eval-dom-reps').value)||null,
-    dominadas_kg:        parseFloat(document.getElementById('eval-dom-kg').value)||null,
+    dominadas_kg:        getSignedValue('eval-dom-kg-sign','eval-dom-kg'),
     dominadas_notas:     document.getElementById('eval-dom-notas').value.trim(),
     press_militar_kg:    parseFloat(document.getElementById('eval-pm-kg').value)||null,
     press_militar_num:   parseInt(document.getElementById('eval-pm-num').value)||null,
@@ -2550,6 +2809,7 @@ async function saveEval(){
     flex_nivel:          parseInt(document.getElementById('eval-flex-nivel').value)||null,
     flex_reps:           parseInt(document.getElementById('eval-flex-reps-test').value)||null,
     flex_notas:          document.getElementById('eval-flex-notas').value.trim(),
+    flex_kg:             getSignedValue('eval-flex-kg-sign','eval-flex-kg'),
     elev_frontales_reps: parseInt(document.getElementById('eval-ef-reps').value)||null,
     elev_frontales_kg:   parseFloat(document.getElementById('eval-ef-kg').value)||null,
     elev_frontales_notas:document.getElementById('eval-ef-notas').value.trim(),
@@ -2557,7 +2817,7 @@ async function saveEval(){
     pino_iso_seg:        parseInt(document.getElementById('eval-pino-seg').value)||null,
     pino_iso_notas:      document.getElementById('eval-pino-notas').value.trim(),
     muscle_up_reps:      parseInt(document.getElementById('eval-mu-reps').value)||null,
-    muscle_up_kg:        (document.getElementById('eval-mu-kg').value !== '' ? parseFloat(document.getElementById('eval-mu-kg').value) : null),
+    muscle_up_kg:        getSignedValue('eval-mu-kg-sign','eval-mu-kg'),
     muscle_up_notas:     document.getElementById('eval-mu-notas').value.trim(),
     remo_tiempo_seg:     (function(){
       var m = parseInt(document.getElementById('eval-remo-min').value)||0;
@@ -2569,6 +2829,12 @@ async function saveEval(){
     remo_metros:         parseInt(document.getElementById('eval-remo-metros').value)||null,
     remo_calorias:       parseInt(document.getElementById('eval-remo-cal').value)||null,
     remo_notas:          document.getElementById('eval-remo-notas').value.trim(),
+    sent_iso_seg:        parseInt(document.getElementById('eval-sentiso-seg').value)||null,
+    sent_iso_kg:         parseFloat(document.getElementById('eval-sentiso-kg').value)||null,
+    sent_iso_notas:      document.getElementById('eval-sentiso-notas').value.trim(),
+    hollow_seg:          parseInt(document.getElementById('eval-hollow-seg').value)||null,
+    hollow_kg:           parseFloat(document.getElementById('eval-hollow-kg').value)||null,
+    hollow_notas:        document.getElementById('eval-hollow-notas').value.trim(),
     notas:               document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
@@ -3016,6 +3282,350 @@ function updateRestDisplay(){
     var ssF = val%60;
     lbl.textContent = (mmF<10?'0':'')+mmF+':'+(ssF<10?'0':'')+ssF;
   }
+}
+
+
+
+// Aplica visibilidad del nav según el tipo de cliente
+function applyClientTypeNav(){
+  if(!currentUser) return;
+  var tipo = currentUser.tipo || 'rack';
+  var isSimple = (tipo === 'clase' || tipo === 'wellhub');
+  var buttons = document.querySelectorAll('.nav .nav-btn');
+  buttons.forEach(function(btn){
+    var onclick = btn.getAttribute('onclick') || '';
+    // Determinar qué pantalla activa cada botón
+    var isFund = onclick.indexOf("'fund'") !== -1;
+    var isEval = onclick.indexOf("'eval'") !== -1;
+    var isAdmin = btn.id === 'nav-admin';
+    if(isSimple){
+      // Solo Eval + Fund + Admin (si es admin)
+      var show = isFund || isEval || (isAdmin && currentUser.es_admin);
+      btn.style.display = show ? '' : 'none';
+    } else {
+      // Tipo rack u online: todo visible (respetando admin flag)
+      if(isAdmin){
+        btn.style.display = currentUser.es_admin ? '' : 'none';
+      } else {
+        btn.style.display = '';
+      }
+    }
+  });
+  // Si es simple, la pantalla inicial debe ser eval (no tabla)
+  if(isSimple){
+    // Solo cambiar si está en una pantalla no visible
+    var currentScreen = document.querySelector('.screen.active');
+    if(currentScreen && currentScreen.id !== 'screen-eval' && currentScreen.id !== 'screen-fund' && currentScreen.id !== 'screen-admin'){
+      var evalBtn = document.querySelector('.nav-btn[onclick*="\'eval\'"]');
+      if(evalBtn) showScreen('eval', evalBtn);
+    }
+  }
+}
+
+
+// ═══════════════════════════════════════════════
+// RETOS SEMANALES
+// ═══════════════════════════════════════════════
+var retosData = [];        // todos los retos cargados
+var currentReto = null;    // reto activo de esta semana
+var lastReto = null;       // reto de la semana anterior
+
+function getISOWeek(date){
+  var d = new Date(date.getTime());
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay()||7));
+  var yearStart = new Date(d.getFullYear(),0,1);
+  var weekNo = Math.ceil((((d-yearStart)/86400000)+1)/7);
+  return d.getFullYear() + '-W' + (weekNo<10?'0':'') + weekNo;
+}
+
+function getWeekRange(date){
+  // Lunes a domingo (ISO week)
+  var d = new Date(date.getTime());
+  var day = d.getDay();
+  var diff = d.getDate() - day + (day===0 ? -6 : 1); // lunes
+  var lunes = new Date(d.setDate(diff));
+  lunes.setHours(0,0,0,0);
+  var domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  return {inicio: lunes.toISOString().slice(0,10), fin: domingo.toISOString().slice(0,10)};
+}
+
+// Los tests que pueden ser reto (de las 6 evaluaciones oficiales)
+var RETO_TESTS = [
+  {key:'colgado',         label:'⏱ Colgado en barra',        unit:'seg',  valueField:'colgado_seg',   kgField:'colgado_kg'},
+  {key:'dominadas',       label:'🎯 Dominadas',               unit:'reps', valueField:'dominadas_reps',kgField:'dominadas_kg'},
+  {key:'flex_progresion', label:'💪 Flexiones progresión',    unit:'reps', valueField:'flex_reps',     kgField:'flex_kg', nivelField:'flex_nivel'},
+  {key:'sent_iso',        label:'🦵 Sentadilla isométrica',   unit:'seg',  valueField:'sent_iso_seg',  kgField:'sent_iso_kg'},
+  {key:'hollow',          label:'🤲 Hollow body',             unit:'seg',  valueField:'hollow_seg',    kgField:'hollow_kg'},
+  {key:'pino_iso',        label:'🤸 Isometría de pino',       unit:'seg',  valueField:'pino_iso_seg',  nivelField:'pino_iso_nivel'}
+];
+
+async function loadRetos(){
+  try {
+    retosData = await sbGet('retos_semanales', 'order=fecha_inicio.desc&limit=20');
+    var thisWeek = getISOWeek(new Date());
+    currentReto = retosData.find(function(r){ return r.semana_iso === thisWeek && r.activo; });
+    // Reto anterior: el más reciente que no sea el actual
+    lastReto = retosData.find(function(r){ return r.semana_iso !== thisWeek; });
+  } catch(e){ console.error('Error loadRetos', e); }
+}
+
+// ─── ADMIN: gestión de retos ───
+async function openRetosAdmin(){
+  await loadRetos();
+  var body = document.getElementById('retos-admin-body');
+  var thisWeek = getISOWeek(new Date());
+  var range = getWeekRange(new Date());
+
+  var testOptions = RETO_TESTS.map(function(t){
+    var selected = currentReto && currentReto.test_key === t.key ? ' selected' : '';
+    return '<option value="'+t.key+'"'+selected+'>'+t.label+'</option>';
+  }).join('');
+
+  var html = '<div style="background:var(--gm);border-radius:10px;padding:14px;margin-bottom:14px">'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;letter-spacing:1px;margin-bottom:8px;color:var(--yellow)">Reto de esta semana ('+thisWeek+')</div>'
+    + '<div style="font-size:11px;color:var(--gt);margin-bottom:12px">Del '+formatDateShort(range.inicio)+' al '+formatDateShort(range.fin)+'</div>'
+    + '<div class="form-group">'
+    +   '<label class="form-label">Test</label>'
+    +   '<select class="form-select" id="reto-test-key">'+testOptions+'</select>'
+    + '</div>'
+    + '<div class="form-group">'
+    +   '<label class="form-label">Título (opcional)</label>'
+    +   '<input type="text" class="form-input" id="reto-titulo" value="'+(currentReto?currentReto.titulo||'':'')+'" placeholder="Ej: Reto de verano">'
+    + '</div>'
+    + '<div class="form-group">'
+    +   '<label class="form-label">Descripción (opcional)</label>'
+    +   '<textarea class="form-input" id="reto-desc" rows="2" style="resize:none" placeholder="Cualquier detalle extra...">'+(currentReto?currentReto.descripcion||'':'')+'</textarea>'
+    + '</div>'
+    + '<button class="btn btn-primary" onclick="saveReto()" id="btn-save-reto">'+(currentReto?'💾 Actualizar reto':'✅ Crear reto de la semana')+'</button>';
+
+  if(currentReto){
+    html += '<button class="btn btn-danger" onclick="deleteReto('+currentReto.id+')" style="margin-top:8px">🗑 Desactivar reto</button>';
+  }
+  html += '</div>';
+
+  // Retos anteriores
+  var prevRetos = retosData.filter(function(r){ return r.semana_iso !== thisWeek; }).slice(0, 5);
+  if(prevRetos.length){
+    html += '<div style="font-size:11px;color:var(--gt);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px">Retos anteriores</div>';
+    prevRetos.forEach(function(r){
+      var testDef = RETO_TESTS.find(function(t){return t.key === r.test_key;});
+      html += '<div style="background:var(--gm);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:12px">'
+        + '<div style="font-weight:700;color:var(--cream)">'+r.semana_iso+' — '+(testDef?testDef.label:r.test_key)+'</div>'
+        + '<div style="color:var(--gt);font-size:10px;margin-top:2px">'+formatDateShort(r.fecha_inicio)+' → '+formatDateShort(r.fecha_fin)+'</div>'
+        + '</div>';
+    });
+  }
+
+  body.innerHTML = html;
+  openModal('modal-retos-admin');
+}
+
+async function saveReto(){
+  var testKey = document.getElementById('reto-test-key').value;
+  var titulo = document.getElementById('reto-titulo').value.trim();
+  var desc = document.getElementById('reto-desc').value.trim();
+  var thisWeek = getISOWeek(new Date());
+  var range = getWeekRange(new Date());
+  var btn = document.getElementById('btn-save-reto');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  try {
+    if(currentReto){
+      await sbPatch('retos_semanales', 'id=eq.'+currentReto.id, {
+        test_key: testKey, titulo: titulo, descripcion: desc
+      });
+    } else {
+      await sbPost('retos_semanales', {
+        semana_iso: thisWeek,
+        test_key: testKey,
+        fecha_inicio: range.inicio,
+        fecha_fin: range.fin,
+        activo: true,
+        titulo: titulo,
+        descripcion: desc
+      });
+    }
+    showToast('✅ Reto guardado');
+    await openRetosAdmin();
+  } catch(e){ showToast('❌ Error al guardar reto'); console.error(e); }
+  finally { btn.textContent = '💾 Actualizar reto'; btn.disabled = false; }
+}
+
+async function deleteReto(id){
+  if(!confirm('¿Desactivar el reto de esta semana?')) return;
+  try {
+    await sbPatch('retos_semanales', 'id=eq.'+id, {activo: false});
+    showToast('🗑 Reto desactivado');
+    currentReto = null;
+    await openRetosAdmin();
+  } catch(e){ showToast('❌ Error'); }
+}
+
+// ─── BANNER en pantalla Eval ───
+function renderRetoBanner(){
+  if(!currentReto) return '';
+  var testDef = RETO_TESTS.find(function(t){return t.key === currentReto.test_key;});
+  if(!testDef) return '';
+  var titulo = currentReto.titulo || 'Reto de la semana';
+  return '<div style="background:linear-gradient(135deg,rgba(151,39,46,.25),rgba(232,160,32,.15));border:2px solid var(--granate);border-radius:12px;padding:14px;margin:8px 14px 12px;position:relative;overflow:hidden">'
+    + '<div style="position:absolute;top:6px;right:10px;font-size:9px;color:var(--yellow);font-weight:700;letter-spacing:1px">SEMANA '+currentReto.semana_iso.split("-W")[1]+'</div>'
+    + '<div style="font-size:10px;color:var(--yellow);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:4px">🏆 '+titulo+'</div>'
+    + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;letter-spacing:1px;color:var(--cream);margin-bottom:6px">'+testDef.label+'</div>'
+    + (currentReto.descripcion ? '<div style="font-size:12px;color:var(--gt);margin-bottom:10px">'+currentReto.descripcion+'</div>' : '')
+    + '<div style="display:flex;gap:8px;margin-top:10px">'
+    +   '<button class="btn btn-primary" style="flex:1;padding:10px" onclick="openNewEval()">📝 Registrar</button>'
+    +   '<button class="btn btn-secondary" style="flex:1;padding:10px" onclick="openRanking()">🏆 Ranking</button>'
+    + '</div>'
+    + '</div>';
+}
+
+// ─── RANKING (modal dentro de la app) ───
+var rankingFilter = 'marca'; // 'marca' | 'progresion'
+var rankingData = [];
+
+async function openRanking(){
+  if(!currentReto){ showToast('No hay reto activo'); return; }
+  var testDef = RETO_TESTS.find(function(t){return t.key === currentReto.test_key;});
+  if(!testDef){ showToast('Test no válido'); return; }
+  document.getElementById('ranking-title').textContent = '🏆 ' + testDef.label;
+  rankingFilter = 'marca';
+  await loadRankingData();
+  renderRanking();
+  openModal('modal-ranking');
+}
+
+async function loadRankingData(){
+  var testDef = RETO_TESTS.find(function(t){return t.key === currentReto.test_key;});
+  if(!testDef){ return; }
+  var range = {inicio: currentReto.fecha_inicio, fin: currentReto.fecha_fin};
+  try {
+    // Cargar TODAS las evaluaciones (para calcular progresión con anteriores)
+    var allEvals = await sbGet('evaluaciones', 'order=fecha.desc&limit=1000');
+    // Cargar clientes activos
+    var allClients = await sbGet('clientes', 'activo=eq.true&order=nombre.asc&limit=500');
+    var clientMap = {};
+    allClients.forEach(function(c){ clientMap[c.id] = c; });
+
+    // Filtrar evals de esta semana con valor en el test del reto
+    var thisWeekEvals = allEvals.filter(function(e){
+      if(e.fecha < range.inicio || e.fecha > range.fin) return false;
+      var val = e[testDef.valueField];
+      return val !== null && val !== undefined && val !== '';
+    });
+
+    // Agrupar por cliente: quedarse con la mejor marca de cada uno
+    var bestByClient = {};
+    thisWeekEvals.forEach(function(e){
+      var val = parseFloat(e[testDef.valueField]);
+      if(isNaN(val)) return;
+      if(!bestByClient[e.cliente_id] || val > bestByClient[e.cliente_id].value){
+        bestByClient[e.cliente_id] = { value: val, evalObj: e };
+      }
+    });
+
+    // Para cada cliente con marca esta semana, buscar mejor marca ANTERIOR
+    var results = [];
+    Object.keys(bestByClient).forEach(function(cid){
+      var client = clientMap[parseInt(cid)];
+      if(!client) return;
+      var current = bestByClient[cid].value;
+      // Mejor marca anterior (fuera de rango de esta semana)
+      var previous = null;
+      allEvals.forEach(function(e){
+        if(e.cliente_id != cid) return;
+        if(e.fecha >= range.inicio && e.fecha <= range.fin) return;
+        if(e.fecha > range.inicio) return; // solo anteriores
+        var pv = parseFloat(e[testDef.valueField]);
+        if(isNaN(pv)) return;
+        if(previous === null || pv > previous) previous = pv;
+      });
+      var progresion = null;
+      if(previous !== null && previous > 0){
+        progresion = ((current - previous) / previous) * 100;
+      } else if(previous === null){
+        progresion = null; // primera vez
+      }
+      results.push({
+        cliente: client,
+        current: current,
+        previous: previous,
+        progresion: progresion,
+        evalObj: bestByClient[cid].evalObj
+      });
+    });
+
+    rankingData = results;
+  } catch(e){ console.error('Error loadRankingData', e); rankingData = []; }
+}
+
+function renderRanking(){
+  var testDef = RETO_TESTS.find(function(t){return t.key === currentReto.test_key;});
+  var body = document.getElementById('ranking-body');
+
+  var sorted = rankingData.slice();
+  if(rankingFilter === 'marca'){
+    sorted.sort(function(a,b){ return b.current - a.current; });
+  } else {
+    // Por progresión: primero los que mejoran más (%). Los sin previous al final.
+    sorted.sort(function(a,b){
+      if(a.progresion === null && b.progresion === null) return 0;
+      if(a.progresion === null) return 1;
+      if(b.progresion === null) return -1;
+      return b.progresion - a.progresion;
+    });
+  }
+
+  var tabs = '<div style="display:flex;gap:6px;margin-bottom:14px;background:var(--gm);padding:4px;border-radius:10px">'
+    + '<button class="btn" style="flex:1;padding:10px;background:'+(rankingFilter==="marca"?"var(--granate)":"transparent")+';color:'+(rankingFilter==="marca"?"#fff":"var(--gt)")+';border:none" onclick="setRankingFilter(\'marca\')">🏆 Por marca</button>'
+    + '<button class="btn" style="flex:1;padding:10px;background:'+(rankingFilter==="progresion"?"var(--granate)":"transparent")+';color:'+(rankingFilter==="progresion"?"#fff":"var(--gt)")+';border:none" onclick="setRankingFilter(\'progresion\')">📈 Por progresión</button>'
+    + '</div>';
+
+  var listHtml = '';
+  if(!sorted.length){
+    listHtml = '<div class="empty"><div class="empty-icon">🏆</div><h3>Sin registros aún</h3><p>Nadie ha completado el reto esta semana todavía</p></div>';
+  } else {
+    sorted.forEach(function(row, idx){
+      var pos = idx + 1;
+      var medal = pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':'';
+      var name = getPublicDisplayName(row.cliente);
+      var isMe = currentUser && currentUser.id === row.cliente.id;
+      var valTxt = row.current + ' ' + testDef.unit;
+      // Incluir info extra si aplica (nivel para flex/pino, kg para colgado/sent_iso/hollow)
+      var extraInfo = '';
+      if(testDef.nivelField && row.evalObj[testDef.nivelField]){
+        extraInfo = ' N'+row.evalObj[testDef.nivelField];
+      }
+      if(testDef.kgField && row.evalObj[testDef.kgField]){
+        var kg = parseFloat(row.evalObj[testDef.kgField]);
+        if(kg > 0) extraInfo += ' (+'+kg+'kg)';
+        else if(kg < 0) extraInfo += ' ('+kg+'kg)';
+      }
+      var progTxt = '';
+      if(row.progresion !== null){
+        var col = row.progresion >= 0 ? 'var(--green)' : 'var(--red)';
+        var sign = row.progresion >= 0 ? '+' : '';
+        progTxt = '<span style="color:'+col+';font-size:11px;font-weight:700">'+sign+row.progresion.toFixed(1)+'%</span>';
+      } else {
+        progTxt = '<span style="color:var(--yellow);font-size:10px">1ª vez</span>';
+      }
+      listHtml += '<div style="display:flex;align-items:center;gap:10px;background:'+(isMe?"rgba(151,39,46,.15)":"var(--gm)")+';border:1px solid '+(isMe?"var(--granate)":"transparent")+';border-radius:10px;padding:12px;margin-bottom:6px">'
+        + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:'+(pos<=3?"var(--yellow)":"var(--gt)")+';min-width:32px;text-align:center">'+(medal||pos)+'</div>'
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-weight:700;font-size:14px;color:'+(isMe?"var(--yellow)":"var(--cream)")+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+name+(isMe?" (tú)":"")+'</div>'
+        +   '<div style="font-size:12px;color:var(--gt);margin-top:2px">'+valTxt+extraInfo+'</div>'
+        + '</div>'
+        + '<div style="text-align:right">'+progTxt+'</div>'
+        + '</div>';
+    });
+  }
+
+  body.innerHTML = tabs + listHtml;
+}
+
+function setRankingFilter(f){
+  rankingFilter = f;
+  renderRanking();
 }
 
 
