@@ -611,6 +611,27 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
         <option value="false">🔴 Bloqueado</option>
       </select>
     </div>
+    <div class="form-group">
+      <label class="form-label">Tipo de cliente</label>
+      <select class="form-select" id="cl-tipo">
+        <option value="rack">🏋️ Rack (todo)</option>
+        <option value="online">💻 Online (todo)</option>
+        <option value="clase">👥 Clase (solo Eval + Fund)</option>
+        <option value="wellhub">🎫 Wellhub (solo Eval + Fund)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ranking público</label>
+      <div style="display:flex;align-items:center;gap:10px;background:var(--gm);padding:10px 12px;border-radius:8px">
+        <input type="checkbox" id="cl-consent" style="width:20px;height:20px;accent-color:var(--granate);cursor:pointer">
+        <label for="cl-consent" style="flex:1;font-size:13px;cursor:pointer;color:var(--cream)">Mostrar nombre real en muro público</label>
+      </div>
+      <div style="font-size:10px;color:var(--gt);margin-top:4px">Si no acepta, aparecerá con apodo o iniciales</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Apodo público (opcional)</label>
+      <input type="text" class="form-input" id="cl-apodo" placeholder="Ej: Koldo, Ionzelai, etc. (si vacío = iniciales)">
+    </div>
     <button class="btn btn-primary" onclick="saveClient()" id="btn-save-client">Guardar datos</button>
     <div style="height:8px"></div>
     <button class="btn btn-danger hide" id="btn-toggle-client" onclick="toggleClientActivo()"></button>
@@ -1726,7 +1747,10 @@ async function openEditClient(id){
     await loadCiclosAdmin(id);
     renderEvalActivas(c);
     openModal('modal-client');
-  } catch(e){ showToast('Error al cargar cliente'); }
+  } catch(e){ 
+    console.error('openEditClient error:', e);
+    showToast('Error al cargar cliente: '+(e.message||e));
+  }
 }
 
 // ═══════════════════════════════════════════
