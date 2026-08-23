@@ -1551,19 +1551,28 @@ function renderHist(){
 }
 
 function viewSession(sessId){
-  const sess=sessions.find(s=>s.id===sessId); if(!sess) return;
+  console.log('viewSession called with id:', sessId);
+  const sess=sessions.find(s=>s.id===sessId); 
+  console.log('Found session:', sess);
+  if(!sess) { console.warn('Session not found'); return; }
+  console.log('Session entries:', sess.entries);
   document.getElementById('view-sess-title').textContent=sess.dia_nombre+' · '+formatDateShort(sess.fecha);
   let html='';
-  (sess.entries||[]).forEach(e=>{
-    const sText=(e.series||[]).map((s,i)=>`S${i+1}: ${s.reps} reps${s.kg?' @ '+s.kg+'kg':''}`).join(' · ');
-    const feel={facil:'😊 Fácil',normal:'😐 Normal',duro:'😤 Duro'}[e.sensacion]||'';
-    html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gm)">'
-      + '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+e.ejercicio+'</div>'
-      + '<div style="font-size:13px;color:var(--gt)">'+sText+'</div>'
-      + (feel ? '<span class="feel-badge feel-'+e.sensacion+'">'+feel+'</span>' : '')
-      + (e.nota ? '<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>' : '')
-      + '</div>';
-  });
+  const entries = sess.entries || [];
+  if(!entries.length){
+    html = '<div style="text-align:center;padding:30px;color:var(--gt)"><div style="font-size:36px;margin-bottom:8px">📭</div><div>Esta sesión no tiene ejercicios registrados</div></div>';
+  } else {
+    entries.forEach(e=>{
+      const sText=(e.series||[]).map((s,i)=>`S${i+1}: ${s.reps} reps${s.kg?' @ '+s.kg+'kg':''}`).join(' · ');
+      const feel={facil:'😊 Fácil',normal:'😐 Normal',duro:'😤 Duro'}[e.sensacion]||'';
+      html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gm)">'
+        + '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+e.ejercicio+'</div>'
+        + '<div style="font-size:13px;color:var(--gt)">'+sText+'</div>'
+        + (feel ? '<span class="feel-badge feel-'+e.sensacion+'">'+feel+'</span>' : '')
+        + (e.nota ? '<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>' : '')
+        + '</div>';
+    });
+  }
   document.getElementById('view-sess-body').innerHTML=html;
   document.getElementById('btn-del-sess').onclick=()=>deleteSession(sessId);
   openModal('modal-view-sess');
