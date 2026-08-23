@@ -1527,7 +1527,10 @@ function renderHist(){
   Object.entries(byMonth).forEach(([key,arr])=>{
     const [y,m]=key.split('-');
     const label=new Date(+y,+m-1,1).toLocaleString('es',{month:'long',year:'numeric'});
-    list.innerHTML+=`<div class="section-title">${label}</div>`;
+    const titleEl=document.createElement('div');
+    titleEl.className='section-title';
+    titleEl.textContent=label;
+    list.appendChild(titleEl);
     const card=document.createElement('div'); card.className='card';
     arr.forEach(sess=>{
       const d=sess.fecha.split('-')[2];
