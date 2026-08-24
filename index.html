@@ -2478,7 +2478,9 @@ function renderEval(){
   histList.innerHTML = '';
 
   if(!evaluaciones.length){
-    box.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación pulsando el botón + arriba</p></div>';
+    // Aún sin evaluaciones: mostrar el banner del reto (si hay) + mensaje empty
+    var bannerHtml = renderRetoBanner();
+    box.innerHTML = bannerHtml + '<div class="empty"><div class="empty-icon">📊</div><h3>Sin evaluaciones</h3><p>Registra tu primera evaluación pulsando el botón + arriba</p></div>';
     return;
   }
 
