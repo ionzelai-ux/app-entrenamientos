@@ -138,6 +138,21 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .admin-section h3{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:12px;color:var(--cream)}
 .client-row{background:var(--gd);border-radius:10px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
 
+/* Chips de filtro admin */
+.filter-chip{
+  background:var(--gm);border:1.5px solid var(--gl);color:var(--gt);
+  padding:8px 14px;border-radius:20px;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;
+  letter-spacing:.5px;text-transform:uppercase;
+  transition:all .15s;flex-shrink:0;white-space:nowrap;
+}
+.filter-chip.active{
+  background:var(--granate);border-color:var(--granate);color:#fff;
+}
+.filter-chip:hover:not(.active){
+  border-color:var(--cream);color:var(--cream);
+}
+
 /* Nueva fila con controles inline */
 .client-row-v2{
   background:var(--gd); border-radius:10px; padding:10px 12px; margin-bottom:8px;
@@ -384,8 +399,83 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <input class="form-input" id="inp-pass" type="password" autocomplete="current-password" placeholder="••••••••">
     </div>
     <button class="btn btn-primary" onclick="doLogin()" id="btn-login">Entrar</button>
+    <div style="margin-top:16px;text-align:center;padding-top:12px;border-top:1px solid var(--gl)">
+      <div style="font-size:12px;color:var(--gt);margin-bottom:8px">¿Aún no tienes cuenta?</div>
+      <button class="btn btn-secondary" onclick="showRegisterScreen()" style="width:100%">📝 Regístrate</button>
+    </div>
   </div>
+  <button id="btn-show-install" onclick="showInstallScreen()" style="margin-top:14px;background:transparent;border:1px solid var(--gl);color:var(--gt);padding:10px 16px;border-radius:8px;font-size:12px;cursor:pointer">📲 ¿Cómo instalar la app en el móvil?</button>
   <div style="margin-top:24px;font-size:12px;color:var(--gt)">CODEK Training · Alcobendas</div>
+</div>
+
+<!-- PANTALLA DE REGISTRO -->
+<div id="register-screen" style="display:none;min-height:100vh;background:var(--black);padding:30px 18px;flex-direction:column;align-items:center;justify-content:flex-start">
+  <div style="width:100%;max-width:420px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:var(--granate)">CODEK Training</div>
+      <div style="color:var(--gt);font-size:13px;letter-spacing:1px;margin-top:4px">CREAR CUENTA</div>
+    </div>
+    <div id="reg-error" style="display:none;background:rgba(208,48,48,.15);border:1px solid var(--red);color:var(--red);padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;text-align:center"></div>
+    <div id="reg-success" style="display:none;background:rgba(58,173,110,.15);border:1px solid var(--green);color:var(--green);padding:14px;border-radius:8px;margin-bottom:12px;font-size:14px;text-align:center;line-height:1.5"></div>
+
+    <div id="reg-form">
+      <div class="form-group">
+        <label class="form-label">Nombre completo *</label>
+        <input class="form-input" id="reg-nombre" type="text" placeholder="Ej: María García" autocapitalize="words">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usuario *</label>
+        <input class="form-input" id="reg-usuario" type="text" autocapitalize="none" placeholder="El que usarás para entrar">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña *</label>
+        <input class="form-input" id="reg-pass" type="password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de entrenamiento *</label>
+        <select class="form-select" id="reg-tipo">
+          <option value="">— Selecciona —</option>
+          <option value="clase">👥 Vengo a clases</option>
+          <option value="wellhub">🎫 Soy de Wellhub</option>
+          <option value="rack">🏋️ Uso el rack (con tabla)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">¿Aparecer en ranking público con nombre real?</label>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--gm);padding:10px 12px;border-radius:8px">
+          <input type="checkbox" id="reg-consent" style="width:20px;height:20px;accent-color:var(--granate);cursor:pointer">
+          <label for="reg-consent" style="flex:1;font-size:13px;cursor:pointer;color:var(--cream)">Sí, quiero aparecer con mi nombre</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apodo (opcional, si no marcas lo de arriba)</label>
+        <input class="form-input" id="reg-apodo" type="text" placeholder="Ej: Jon, Mery... (si vacío = iniciales)">
+      </div>
+
+      <div style="background:rgba(232,160,32,.12);border:1px solid rgba(232,160,32,.3);border-radius:8px;padding:12px;margin:14px 0;font-size:12px;color:var(--yellow);line-height:1.5">
+        ℹ️ Tu cuenta se creará como <strong>pendiente de aprobación</strong>. Recibirás acceso una vez que revisemos tu registro (normalmente en el mismo día).
+      </div>
+
+      <button class="btn btn-primary" onclick="submitRegister()" id="btn-register" style="width:100%">Crear cuenta</button>
+      <button class="btn btn-secondary" onclick="showLoginScreen()" style="width:100%;margin-top:10px">← Volver a login</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANTALLA DE INSTRUCCIONES DE INSTALACIÓN -->
+<div id="install-screen" style="display:none;min-height:100vh;background:var(--black);padding:30px 18px;flex-direction:column;align-items:center;justify-content:flex-start">
+  <div style="width:100%;max-width:460px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;margin-bottom:6px">📲</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--cream)">INSTALA CODEK EN TU MÓVIL</div>
+      <div style="color:var(--gt);font-size:12px;margin-top:6px">Se comporta como una app nativa</div>
+    </div>
+
+    <div id="install-instructions"></div>
+
+    <button class="btn btn-primary" onclick="showLoginScreen()" style="width:100%;margin-top:14px">✓ Ya la tengo instalada</button>
+    <button class="btn btn-secondary" onclick="showLoginScreen()" style="width:100%;margin-top:8px">← Volver</button>
+  </div>
 </div>
 
 <!-- APP -->
@@ -1151,6 +1241,159 @@ let progFilter   = 'all';
 // ═══════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+// PANTALLAS: LOGIN / REGISTRO / INSTALACIÓN
+// ═══════════════════════════════════════════════
+function showLoginScreen(){
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('register-screen').style.display = 'none';
+  document.getElementById('install-screen').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'none';
+  document.getElementById('reg-form').style.display = 'block';
+}
+
+function showRegisterScreen(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('register-screen').style.display = 'flex';
+  document.getElementById('install-screen').style.display = 'none';
+  // Limpiar campos
+  ['reg-nombre','reg-usuario','reg-pass','reg-tipo','reg-apodo'].forEach(function(id){
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('reg-consent').checked = false;
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('reg-success').style.display = 'none';
+  document.getElementById('reg-form').style.display = 'block';
+}
+
+function showInstallScreen(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('register-screen').style.display = 'none';
+  document.getElementById('install-screen').style.display = 'flex';
+  renderInstallInstructions();
+}
+
+function detectDevice(){
+  var ua = navigator.userAgent;
+  if(/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  if(/Android/i.test(ua)) return 'android';
+  return 'desktop';
+}
+
+function renderInstallInstructions(){
+  var device = detectDevice();
+  var html = '';
+  if(device === 'ios'){
+    html = '<div style="background:var(--gd);border-radius:12px;padding:18px;border:1px solid var(--gl)">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--yellow);letter-spacing:1px;margin-bottom:12px">📱 EN IPHONE (Safari)</div>'
+      + '<div style="font-size:14px;line-height:1.9;color:var(--cream)">'
+      +   '<div style="margin-bottom:10px"><strong style="color:var(--granate)">1.</strong> Pulsa el botón <strong>compartir</strong> <span style="display:inline-block;background:var(--gm);padding:2px 8px;border-radius:4px;font-size:16px">⎋</span> abajo en Safari</div>'
+      +   '<div style="margin-bottom:10px"><strong style="color:var(--granate)">2.</strong> Baja por la lista y toca <strong>"Añadir a pantalla de inicio"</strong></div>'
+      +   '<div><strong style="color:var(--granate)">3.</strong> Confirma pulsando <strong>"Añadir"</strong> arriba a la derecha</div>'
+      + '</div>'
+      + '<div style="margin-top:14px;padding:10px;background:rgba(232,160,32,.1);border-radius:8px;font-size:12px;color:var(--yellow)">💡 Si no ves el botón compartir, abre esta página en <strong>Safari</strong> (no funciona en Chrome/otros navegadores en iPhone)</div>'
+      + '</div>';
+  } else if(device === 'android'){
+    html = '<div style="background:var(--gd);border-radius:12px;padding:18px;border:1px solid var(--gl)">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--green);letter-spacing:1px;margin-bottom:12px">📱 EN ANDROID (Chrome)</div>'
+      + '<div style="font-size:14px;line-height:1.9;color:var(--cream)">'
+      +   '<div style="margin-bottom:10px"><strong style="color:var(--granate)">1.</strong> Pulsa el <strong>menú</strong> <span style="display:inline-block;background:var(--gm);padding:2px 10px;border-radius:4px;font-size:16px">⋮</span> arriba a la derecha</div>'
+      +   '<div style="margin-bottom:10px"><strong style="color:var(--granate)">2.</strong> Toca <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong></div>'
+      +   '<div><strong style="color:var(--granate)">3.</strong> Confirma pulsando <strong>"Instalar"</strong></div>'
+      + '</div>'
+      + '</div>';
+  } else {
+    html = '<div style="background:var(--gd);border-radius:12px;padding:18px;border:1px solid var(--gl)">'
+      + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:20px;color:var(--cream);letter-spacing:1px;margin-bottom:12px">💻 EN ORDENADOR</div>'
+      + '<div style="font-size:14px;line-height:1.7;color:var(--cream)">'
+      + 'Escanea este QR con tu móvil para abrir la app y poder instalarla:'
+      + '<div style="text-align:center;margin:14px 0">'
+      +   '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fionzelai-ux.github.io%2Fapp-entrenamientos%2F" style="border-radius:8px;background:#fff;padding:8px" alt="QR">'
+      + '</div>'
+      + 'También puedes usar la app desde el navegador aquí mismo.'
+      + '</div>'
+      + '</div>';
+  }
+  document.getElementById('install-instructions').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// REGISTRO PÚBLICO
+// ═══════════════════════════════════════════════
+async function submitRegister(){
+  var nombre = document.getElementById('reg-nombre').value.trim();
+  var usuario = document.getElementById('reg-usuario').value.trim().toLowerCase();
+  var pass = document.getElementById('reg-pass').value.trim();
+  var tipo = document.getElementById('reg-tipo').value;
+  var consent = document.getElementById('reg-consent').checked;
+  var apodo = document.getElementById('reg-apodo').value.trim();
+
+  var errorEl = document.getElementById('reg-error');
+  errorEl.style.display = 'none';
+
+  // Validaciones
+  if(!nombre || !usuario || !pass || !tipo){
+    errorEl.textContent = 'Rellena todos los campos obligatorios (*)';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if(pass.length < 6){
+    errorEl.textContent = 'La contraseña debe tener al menos 6 caracteres';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if(usuario.length < 3){
+    errorEl.textContent = 'El usuario debe tener al menos 3 caracteres';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  var btn = document.getElementById('btn-register');
+  btn.textContent = 'Creando cuenta...';
+  btn.disabled = true;
+
+  try {
+    // Comprobar si el usuario ya existe
+    var existing = await sbGet('clientes','usuario=eq.'+encodeURIComponent(usuario)+'&select=id');
+    if(existing.length > 0){
+      errorEl.textContent = 'Este usuario ya existe. Elige otro.';
+      errorEl.style.display = 'block';
+      btn.textContent = 'Crear cuenta';
+      btn.disabled = false;
+      return;
+    }
+
+    // Crear cliente con estado='pendiente'
+    await sbPost('clientes', {
+      nombre: nombre,
+      usuario: usuario,
+      password: pass,
+      activo: false,  // hasta que se apruebe
+      estado: 'pendiente',
+      tipo: tipo,
+      consentimiento_publico: consent,
+      apodo_publico: apodo,
+      es_admin: false,
+      programa: []
+    });
+
+    // Mostrar mensaje de éxito
+    document.getElementById('reg-form').style.display = 'none';
+    var successEl = document.getElementById('reg-success');
+    successEl.innerHTML = '✅ <strong>¡Cuenta creada!</strong><br><br>Tu registro está pendiente de aprobación. Te avisaremos cuando esté activo (normalmente en el mismo día).<br><br><button class="btn btn-primary" onclick="showLoginScreen()" style="width:100%;margin-top:10px">Volver a login</button>';
+    successEl.style.display = 'block';
+  } catch(e){
+    console.error('Register error:', e);
+    errorEl.textContent = 'Error al crear la cuenta. Inténtalo de nuevo.';
+    errorEl.style.display = 'block';
+    btn.textContent = 'Crear cuenta';
+    btn.disabled = false;
+  }
+}
+
+
 async function doLogin() {
   const usuario  = document.getElementById('inp-user').value.trim().toLowerCase();
   const password = document.getElementById('inp-pass').value.trim();
@@ -1158,11 +1401,27 @@ async function doLogin() {
   const btn      = document.getElementById('btn-login');
   errEl.style.display='none'; btn.textContent='Entrando...'; btn.disabled=true;
   try {
-    const rows = await sbGet('clientes',`usuario=eq.${encodeURIComponent(usuario)}&activo=eq.true&select=*`);
+    // Ahora buscamos SIN filtrar por activo para dar mensajes claros
+    const rows = await sbGet('clientes',`usuario=eq.${encodeURIComponent(usuario)}&select=*`);
     if(!rows.length || rows[0].password !== password){
-      errEl.style.display='block'; return;
+      errEl.textContent = 'Usuario o contraseña incorrectos';
+      errEl.style.display='block'; 
+      return;
     }
-    currentUser = rows[0];
+    var user = rows[0];
+    // Comprobar estado
+    var estado = user.estado || (user.activo ? 'activo' : 'bloqueado');
+    if(estado === 'pendiente'){
+      errEl.innerHTML = '⏳ Tu cuenta está <strong>pendiente de aprobación</strong>. Te avisaremos cuando esté activa.';
+      errEl.style.display='block';
+      return;
+    }
+    if(estado === 'bloqueado' || !user.activo){
+      errEl.innerHTML = '🔴 Tu cuenta está <strong>bloqueada</strong>. Contacta con el gimnasio.';
+      errEl.style.display='block';
+      return;
+    }
+    currentUser = user;
     localStorage.setItem('codek_uid', currentUser.id);
     await initApp();
   } catch(e) {
@@ -1780,43 +2039,143 @@ async function renderAdmin(){
   const list=document.getElementById('clients-list');
   list.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try {
-    const clients=await sbGet('clientes','order=nombre.asc&select=id,nombre,usuario,activo,es_admin,tipo,consentimiento_publico,apodo_publico');
-    list.innerHTML='';
-    var tipoLabels = {rack:'🏋️ Rack', online:'💻 Online', clase:'👥 Clase', wellhub:'🎫 Wellhub'};
-    var tipoColors = {rack:'#97272E', online:'#2E7DD1', clase:'#3aad6e', wellhub:'#e8a020'};
-    clients.filter(function(c){return !c.es_admin;}).forEach(function(c){
-      var tipo = c.tipo || 'rack';
-      var isPublic = c.consentimiento_publico === true;
-      var isActive = c.activo === true;
-      var row=document.createElement('div');
-      row.className='client-row-v2';
-      row.dataset.id = c.id;
-      row.innerHTML =
-        '<div class="cr-info" onclick="openEditClient('+c.id+')">'
-        +   '<div class="client-name">'+c.nombre+'</div>'
-        +   '<div class="client-meta">@'+c.usuario+'</div>'
+    const clients=await sbGet('clientes','order=nombre.asc&select=id,nombre,usuario,activo,es_admin,tipo,consentimiento_publico,apodo_publico,estado');
+    window._adminClients = clients.filter(function(c){return !c.es_admin;});
+    var pendCount = window._adminClients.filter(function(c){return c.estado === 'pendiente';}).length;
+    // Renderizar controles superiores (solo la primera vez)
+    if(!document.getElementById('admin-filters')){
+      var toolbar = document.createElement('div');
+      toolbar.id = 'admin-filters';
+      toolbar.innerHTML =
+        '<div id="pending-banner" style="display:none;background:linear-gradient(135deg,rgba(232,160,32,.2),rgba(232,160,32,.05));border:2px solid var(--yellow);border-radius:10px;padding:12px;margin-bottom:12px;cursor:pointer" onclick="setAdminFilter(\'pendiente\')">'
+        +   '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:var(--yellow);letter-spacing:1px" id="pending-banner-txt">0 CUENTAS PENDIENTES</div>'
+        +   '<div style="font-size:11px;color:var(--gt);margin-top:2px">Pulsa para revisarlas</div>'
         + '</div>'
-        + '<div class="cr-controls">'
-        +   '<select class="cr-tipo-select" data-id="'+c.id+'" onchange="updateClientField('+c.id+',\'tipo\',this.value)" style="background:'+tipoColors[tipo]+';color:#fff">'
-        +     '<option value="rack"'+(tipo==='rack'?' selected':'')+'>🏋️ Rack</option>'
-        +     '<option value="online"'+(tipo==='online'?' selected':'')+'>💻 Online</option>'
-        +     '<option value="clase"'+(tipo==='clase'?' selected':'')+'>👥 Clase</option>'
-        +     '<option value="wellhub"'+(tipo==='wellhub'?' selected':'')+'>🎫 Wellhub</option>'
-        +   '</select>'
-        +   '<button class="cr-icon-btn '+(isPublic?'on':'')+'" data-id="'+c.id+'" onclick="toggleClientPublic('+c.id+',this)" title="'+(isPublic?'Público':'Privado')+'">'
-        +     (isPublic?'🌍':'🔒')
-        +   '</button>'
-        +   '<button class="cr-icon-btn '+(isActive?'on-active':'off-active')+'" data-id="'+c.id+'" onclick="toggleClientActiveFromList('+c.id+',this)" title="'+(isActive?'Activo':'Bloqueado')+'">'
-        +     (isActive?'✅':'🔴')
-        +   '</button>'
-        +   '<div class="cr-arrow" onclick="openEditClient('+c.id+')">›</div>'
+        + '<input type="text" id="admin-search" placeholder="🔍 Buscar por nombre o usuario..." oninput="filterAdminClients()" style="width:100%;padding:11px 14px;background:var(--gm);border:1.5px solid var(--gl);border-radius:8px;color:var(--cream);font-size:14px;margin-bottom:10px;box-sizing:border-box">'
+        + '<div id="admin-filter-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+        +   '<button class="filter-chip active" data-filter="todos" onclick="setAdminFilter(\'todos\')">Todos</button>'
+        +   '<button class="filter-chip" data-filter="pendiente" onclick="setAdminFilter(\'pendiente\')">⏳ Pendientes</button>'
+        +   '<button class="filter-chip" data-filter="rack" onclick="setAdminFilter(\'rack\')">🏋️ Rack</button>'
+        +   '<button class="filter-chip" data-filter="online" onclick="setAdminFilter(\'online\')">💻 Online</button>'
+        +   '<button class="filter-chip" data-filter="clase" onclick="setAdminFilter(\'clase\')">👥 Clase</button>'
+        +   '<button class="filter-chip" data-filter="wellhub" onclick="setAdminFilter(\'wellhub\')">🎫 Wellhub</button>'
+        +   '<button class="filter-chip" data-filter="bloqueado" onclick="setAdminFilter(\'bloqueado\')">🔴 Bloqueados</button>'
         + '</div>';
-      list.appendChild(row);
-    });
-    if(!list.children.length) list.innerHTML='<div class="empty"><p>Sin clientes aún</p></div>';
+      list.parentElement.insertBefore(toolbar, list);
+    }
+    var pBanner = document.getElementById('pending-banner');
+    if(pendCount > 0){
+      pBanner.style.display = 'block';
+      document.getElementById('pending-banner-txt').textContent = pendCount + (pendCount === 1 ? ' CUENTA PENDIENTE DE APROBAR' : ' CUENTAS PENDIENTES DE APROBAR');
+    } else {
+      pBanner.style.display = 'none';
+    }
+    filterAdminClients();
   } catch(e){ 
     console.error('renderAdmin error:', e);
     list.innerHTML='<div class="empty"><p>Error al cargar: '+(e.message||e)+'</p></div>';
+  }
+}
+
+var adminCurrentFilter = 'todos';
+
+function setAdminFilter(filter){
+  adminCurrentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(function(chip){
+    chip.classList.toggle('active', chip.dataset.filter === filter);
+  });
+  filterAdminClients();
+}
+
+function filterAdminClients(){
+  var clients = window._adminClients || [];
+  var search = (document.getElementById('admin-search') || {}).value || '';
+  search = search.toLowerCase().trim();
+  var filter = adminCurrentFilter;
+  var filtered = clients.filter(function(c){
+    if(filter === 'pendiente'){
+      if(c.estado !== 'pendiente') return false;
+    } else if(filter === 'bloqueado'){
+      var est = c.estado || (c.activo ? 'activo' : 'bloqueado');
+      if(est !== 'bloqueado') return false;
+    } else if(filter === 'rack' || filter === 'online' || filter === 'clase' || filter === 'wellhub'){
+      if((c.tipo || 'rack') !== filter) return false;
+    }
+    if(search){
+      var nom = (c.nombre || '').toLowerCase();
+      var us = (c.usuario || '').toLowerCase();
+      if(nom.indexOf(search) === -1 && us.indexOf(search) === -1) return false;
+    }
+    return true;
+  });
+  renderAdminClientList(filtered);
+}
+
+function renderAdminClientList(clients){
+  var list = document.getElementById('clients-list');
+  list.innerHTML = '';
+  var tipoColors = {rack:'#97272E', online:'#2E7DD1', clase:'#3aad6e', wellhub:'#e8a020'};
+  clients.forEach(function(c){
+    var tipo = c.tipo || 'rack';
+    var isPublic = c.consentimiento_publico === true;
+    var estado = c.estado || (c.activo ? 'activo' : 'bloqueado');
+    var isActive = estado === 'activo';
+    var isPending = estado === 'pendiente';
+    var row=document.createElement('div');
+    row.className='client-row-v2';
+    if(isPending) row.style.border = '2px solid var(--yellow)';
+    row.dataset.id = c.id;
+    var stateBtn;
+    if(isPending){
+      stateBtn = '<button class="cr-icon-btn" style="border-color:var(--yellow);background:rgba(232,160,32,.15)" onclick="approveClient('+c.id+',this)" title="Aprobar cuenta">⏳</button>';
+    } else if(isActive){
+      stateBtn = '<button class="cr-icon-btn on-active" data-id="'+c.id+'" onclick="toggleClientActiveFromList('+c.id+',this)" title="Activo">✅</button>';
+    } else {
+      stateBtn = '<button class="cr-icon-btn off-active" data-id="'+c.id+'" onclick="toggleClientActiveFromList('+c.id+',this)" title="Bloqueado">🔴</button>';
+    }
+    row.innerHTML =
+      '<div class="cr-info" onclick="openEditClient('+c.id+')">'
+      +   '<div class="client-name">'+c.nombre+(isPending?' <span style="background:var(--yellow);color:#000;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;letter-spacing:.5px">PENDIENTE</span>':'')+'</div>'
+      +   '<div class="client-meta">@'+c.usuario+'</div>'
+      + '</div>'
+      + '<div class="cr-controls">'
+      +   '<select class="cr-tipo-select" data-id="'+c.id+'" onchange="updateClientField('+c.id+',\'tipo\',this.value)" style="background:'+tipoColors[tipo]+';color:#fff">'
+      +     '<option value="rack"'+(tipo==='rack'?' selected':'')+'>🏋️ Rack</option>'
+      +     '<option value="online"'+(tipo==='online'?' selected':'')+'>💻 Online</option>'
+      +     '<option value="clase"'+(tipo==='clase'?' selected':'')+'>👥 Clase</option>'
+      +     '<option value="wellhub"'+(tipo==='wellhub'?' selected':'')+'>🎫 Wellhub</option>'
+      +   '</select>'
+      +   '<button class="cr-icon-btn '+(isPublic?'on':'')+'" data-id="'+c.id+'" onclick="toggleClientPublic('+c.id+',this)" title="'+(isPublic?'Público':'Privado')+'">'
+      +     (isPublic?'🌍':'🔒')
+      +   '</button>'
+      +   stateBtn
+      +   '<div class="cr-arrow" onclick="openEditClient('+c.id+')">›</div>'
+      + '</div>';
+    list.appendChild(row);
+  });
+  if(!clients.length){
+    list.innerHTML = '<div class="empty" style="padding:24px"><p>Sin resultados</p></div>';
+  }
+}
+
+async function approveClient(id, btn){
+  if(!confirm('¿Aprobar esta cuenta? El usuario podrá acceder a la app.')) return;
+  var origHtml = btn.innerHTML;
+  btn.innerHTML = '...';
+  btn.disabled = true;
+  try {
+    await sbPatch('clientes', 'id=eq.'+id, {estado: 'activo', activo: true});
+    showToast('✅ Cuenta aprobada');
+    if(window._adminClients){
+      var c = window._adminClients.find(function(x){return x.id === id;});
+      if(c){ c.estado = 'activo'; c.activo = true; }
+    }
+    renderAdmin();
+  } catch(e){
+    console.error(e);
+    showToast('❌ Error al aprobar');
+    btn.innerHTML = origHtml;
+    btn.disabled = false;
   }
 }
 
@@ -1857,12 +2216,18 @@ async function toggleClientPublic(id, btn){
 async function toggleClientActiveFromList(id, btn){
   var wasOn = btn.classList.contains('on-active');
   var newVal = !wasOn;
+  var newEstado = newVal ? 'activo' : 'bloqueado';
   try {
-    await sbPatch('clientes', 'id=eq.'+id, {activo: newVal});
+    await sbPatch('clientes', 'id=eq.'+id, {activo: newVal, estado: newEstado});
     btn.classList.remove('on-active','off-active');
     btn.classList.add(newVal ? 'on-active' : 'off-active');
     btn.textContent = newVal ? '✅' : '🔴';
     btn.title = newVal ? 'Activo' : 'Bloqueado';
+    // Actualizar cache
+    if(window._adminClients){
+      var c = window._adminClients.find(function(x){return x.id === id;});
+      if(c){ c.estado = newEstado; c.activo = newVal; }
+    }
     showToast(newVal ? '✅ Cliente activado' : '🔴 Cliente bloqueado');
   } catch(e){ 
     console.error(e); showToast('❌ Error al guardar'); 
@@ -1991,6 +2356,7 @@ async function saveClient(){
     if(editClientId){
       await sbPatch('clientes',`id=eq.${editClientId}`,{
         nombre,usuario,password:pass,activo,
+        estado: activo ? 'activo' : 'bloqueado',
         tipo:document.getElementById('cl-tipo').value||'rack',
         consentimiento_publico: document.getElementById('cl-consent').checked,
         apodo_publico: document.getElementById('cl-apodo').value.trim()
@@ -1999,6 +2365,7 @@ async function saveClient(){
     } else {
       const [newClient]=await sbPost('clientes',{
         nombre,usuario,password:pass,activo,
+        estado: activo ? 'activo' : 'bloqueado',
         tipo:document.getElementById('cl-tipo').value||'rack',
         consentimiento_publico: document.getElementById('cl-consent').checked,
         apodo_publico: document.getElementById('cl-apodo').value.trim(),
