@@ -1110,6 +1110,44 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       </div>
     </div>
 
+    <!-- PRESS BANCA -->
+    <div id="eval-block-press-banca" style="background:rgba(151,39,46,.08);border:1px solid rgba(151,39,46,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--granate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🏋️ Press banca</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Repeticiones</label>
+          <input type="number" class="form-input" id="eval-pbanca-reps" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Peso (kg)</label>
+          <input type="number" class="form-input" id="eval-pbanca-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-pbanca-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <!-- ELEVACIONES A PINO 5 MIN -->
+    <div id="eval-block-pino-5min" style="background:rgba(58,173,110,.08);border:1px solid rgba(58,173,110,.25);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🤸 Elevaciones a pino (5 min)</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Repeticiones</label>
+          <input type="number" class="form-input" id="eval-pino5-reps" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Peso (kg, opcional)</label>
+          <input type="number" class="form-input" id="eval-pino5-kg" placeholder="0" step="0.5" min="0" inputmode="decimal">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0">
+        <label class="form-label">Notas</label>
+        <input type="text" class="form-input" id="eval-pino5-notas" placeholder="Observaciones...">
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Notas generales</label>
       <textarea class="form-input" id="eval-notas" rows="2" style="resize:none" placeholder="Observaciones..."></textarea>
@@ -2294,7 +2332,9 @@ const EVAL_LABELS = [
   {key:'muscle_up',        label:'🚀 Muscle-up'},
   {key:'remo',             label:'🚣 Remo'},
   {key:'sent_iso',         label:'🦵 Sentadilla isométrica'},
-  {key:'hollow',           label:'🤲 Hollow body'}
+  {key:'hollow',           label:'🤲 Hollow body'},
+  {key:'press_banca',      label:'🏋️ Press banca'},
+  {key:'pino_5min',        label:'🤸 Elevaciones a pino (5 min)'}
 ];
 
 function renderEvalActivas(cliente){
@@ -2302,7 +2342,8 @@ function renderEvalActivas(cliente){
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
     elev_frontales:false, pino_iso:false, muscle_up:false, remo:false,
-    sent_iso:true, hollow:true
+    sent_iso:true, hollow:true,
+    press_banca:false, pino_5min:false
   };
   var act = Object.assign({}, defaults, cliente.evaluaciones_activas || {});
   var html = '';
@@ -3287,6 +3328,12 @@ function openNewEval(onlyTestKey){
   document.getElementById('eval-hollow-seg').value='';
   document.getElementById('eval-hollow-kg').value='';
   document.getElementById('eval-hollow-notas').value='';
+  document.getElementById('eval-pbanca-reps').value='';
+  document.getElementById('eval-pbanca-kg').value='';
+  document.getElementById('eval-pbanca-notas').value='';
+  document.getElementById('eval-pino5-reps').value='';
+  document.getElementById('eval-pino5-kg').value='';
+  document.getElementById('eval-pino5-notas').value='';
   document.getElementById('eval-notas').value='';
   applyEvalActivas(onlyTestKey);
   // Cambiar título del modal según el modo
@@ -3319,7 +3366,9 @@ function applyEvalActivas(onlyTestKey){
     'eval-block-muscle-up':        act.muscle_up === true,
     'eval-block-remo':             act.remo === true,
     'eval-block-sent-iso':         act.sent_iso !== false,
-    'eval-block-hollow':           act.hollow !== false
+    'eval-block-hollow':           act.hollow !== false,
+    'eval-block-press-banca':      act.press_banca === true,
+    'eval-block-pino-5min':        act.pino_5min === true
   };
   // Mapa de test_key -> id del bloque (para modo reto individual)
   var testKeyToBlockId = {
@@ -3336,7 +3385,9 @@ function applyEvalActivas(onlyTestKey){
     'muscle_up':        'eval-block-muscle-up',
     'remo':             'eval-block-remo',
     'sent_iso':         'eval-block-sent-iso',
-    'hollow':           'eval-block-hollow'
+    'hollow':           'eval-block-hollow',
+    'press_banca':      'eval-block-press-banca',
+    'pino_5min':        'eval-block-pino-5min'
   };
   Object.keys(mapping).forEach(function(id){
     var el = document.getElementById(id);
@@ -3365,7 +3416,8 @@ function getEvalActivas(){
     colgado:true, sentadillas_30s:true, remos_30s:true, flexiones_30s:true,
     dominadas:true, press_militar_kb:true, sentadilla_kb:true, flex_progresion:true,
     elev_frontales:false, pino_iso:false, muscle_up:false, remo:false,
-    sent_iso:true, hollow:true
+    sent_iso:true, hollow:true,
+    press_banca:false, pino_5min:false
   };
   var user = currentUser && currentUser.evaluaciones_activas;
   if(!user) return defaults;
@@ -3421,6 +3473,12 @@ async function saveEval(){
     hollow_seg:          parseInt(document.getElementById('eval-hollow-seg').value)||null,
     hollow_kg:           parseFloat(document.getElementById('eval-hollow-kg').value)||null,
     hollow_notas:        document.getElementById('eval-hollow-notas').value.trim(),
+    press_banca_reps:    parseInt(document.getElementById('eval-pbanca-reps').value)||null,
+    press_banca_kg:      parseFloat(document.getElementById('eval-pbanca-kg').value)||null,
+    press_banca_notas:   document.getElementById('eval-pbanca-notas').value.trim(),
+    pino_5min_reps:      parseInt(document.getElementById('eval-pino5-reps').value)||null,
+    pino_5min_kg:        parseFloat(document.getElementById('eval-pino5-kg').value)||null,
+    pino_5min_notas:     document.getElementById('eval-pino5-notas').value.trim(),
     notas:               document.getElementById('eval-notas').value.trim()
   };
   var btn=document.getElementById('btn-save-eval');
