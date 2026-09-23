@@ -2710,9 +2710,9 @@ async function cerrarCiclo(){
 // VÍDEOS DE LA BATERÍA (solo lectura, se cargan una vez por sesión)
 // ═══════════════════════════════════════════
 function normalizeExName(s){
-  // Quita etiquetas de bloque delante del nombre (p.ej. "TÁBATA – ", "EMOM – ")
-  // para que el vídeo se enlace igual aunque el ejercicio lleve esa marca.
-  s = (s||'').replace(/^[A-ZÁÉÍÓÚÑÜ]{3,}\s*[–—:-]\s*/, '');
+  // Quita etiquetas de bloque delante del nombre (p.ej. "TÁBATA – ", "EMOM – ",
+  // "TÁBATA 1 – ") para que el vídeo se enlace igual aunque el ejercicio lleve esa marca.
+  s = (s||'').replace(/^[A-ZÁÉÍÓÚÑÜ]{3,}\s*\d*\s*[–—:-]\s*/, '');
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ');
 }
 
