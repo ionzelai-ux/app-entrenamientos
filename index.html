@@ -2710,7 +2710,10 @@ async function cerrarCiclo(){
 // VÍDEOS DE LA BATERÍA (solo lectura, se cargan una vez por sesión)
 // ═══════════════════════════════════════════
 function normalizeExName(s){
-  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ');
+  // Quita etiquetas de bloque delante del nombre (p.ej. "TÁBATA – ", "EMOM – ")
+  // para que el vídeo se enlace igual aunque el ejercicio lleve esa marca.
+  s = (s||'').replace(/^[A-ZÁÉÍÓÚÑÜ]{3,}\s*[–—:-]\s*/, '');
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ');
 }
 
 async function ensureBateriaCatalogo(){
