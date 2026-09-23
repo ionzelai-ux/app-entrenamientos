@@ -73,6 +73,27 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .ex-info{flex:1}
 .ex-name{font-weight:600;font-size:14px;color:var(--cream)}
 .ex-meta{font-size:12px;color:var(--gt);margin-top:2px}
+.ex-video-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(151,39,46,.25);color:var(--granate-l);border:none;font-size:11px;margin-left:6px;flex-shrink:0;vertical-align:middle;cursor:pointer;padding:0}
+.ex-video-btn:active{background:var(--granate)}
+.video-modal-body{padding:4px 0 0}
+.video-modal-body video{width:100%;border-radius:12px;background:#000;display:block}
+.ciclo-dia{background:var(--gm);border:1px solid var(--gl);border-radius:12px;padding:12px;margin-bottom:12px}
+.ciclo-dia-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.ciclo-dia-head .form-input{padding:10px 12px;font-size:14px}
+.ciclo-ej-row{background:var(--black);border:1px solid var(--gl);border-radius:10px;padding:10px;margin-bottom:8px}
+.ciclo-ej-row .form-input{padding:10px 12px;font-size:14px;margin-bottom:6px}
+.ciclo-ej-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.ciclo-ej-nombre-wrap{position:relative}
+.ciclo-ej-suggestions{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--gd);border:1.5px solid var(--granate);border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;display:none}
+.ciclo-ej-suggestions.show{display:block}
+.ciclo-ej-suggestion-item{padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:1px solid var(--gl);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ciclo-ej-suggestion-item:last-child{border-bottom:none}
+.ciclo-ej-suggestion-item:active{background:var(--granate)}
+.ciclo-ej-suggestion-video{color:var(--yellow);font-size:11px;flex-shrink:0}
+.ciclo-ej-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ciclo-ej-info-lbl{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gt);flex:1}
+.ciclo-json-wrap{margin-top:10px}
+.ciclo-json-toggle{background:none;border:none;color:var(--gt);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px 0}
 .ex-last{font-size:12px;color:var(--gt);margin-top:3px}
 .ex-last strong{color:var(--cream)}
 /* ── CICLO BADGE ── */
@@ -706,6 +727,18 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 </div>
 
 <!-- MODAL: VER SESIÓN -->
+<!-- MODAL: VÍDEO DE EJERCICIO (desde la batería) -->
+<div class="modal-overlay" id="modal-video">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="video-modal-title">Vídeo</div>
+      <button class="modal-close" onclick="closeVideoModal()">✕</button>
+    </div>
+    <div class="video-modal-body" id="video-modal-body"></div>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-view-sess">
   <div class="modal">
     <div class="modal-header">
@@ -813,9 +846,18 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <input type="date" class="form-input" id="ciclo-fecha">
     </div>
     <div class="form-group">
-      <label class="form-label">Programa (JSON)</label>
-      <textarea class="form-input" id="ciclo-programa" rows="14" style="font-family:monospace;font-size:12px;resize:vertical" placeholder='[{"dia":"Día 1","ejercicios":[{"nombre":"Sentadilla","series":3,"repMin":6,"repMax":8,"notas":""}]}]'></textarea>
+      <label class="form-label">Programa</label>
+      <div id="ciclo-dias-container"></div>
+      <button class="btn btn-secondary" style="width:100%" onclick="addCicloDia()">+ Añadir día</button>
     </div>
+    <div class="ciclo-json-wrap">
+      <button type="button" class="ciclo-json-toggle" onclick="toggleCicloJsonView()" id="ciclo-json-toggle-btn">Ver/editar como JSON</button>
+      <div id="ciclo-json-box" class="hide">
+        <textarea class="form-input" id="ciclo-programa" rows="14" style="font-family:monospace;font-size:12px;resize:vertical;margin-top:8px"></textarea>
+        <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="applyCicloJson()">Aplicar JSON al programa de arriba</button>
+      </div>
+    </div>
+    <div style="height:6px"></div>
     <button class="btn btn-primary" onclick="saveCiclo()" id="btn-save-ciclo">Guardar ciclo</button>
     <div style="height:8px"></div>
     <div id="btn-cerrar-ciclo-wrap" class="hide">
@@ -1246,6 +1288,10 @@ const SB_URL  = 'https://ronwprkclwaahlddowfe.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvbndwcmtjbHdhYWhsZGRvd2ZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MzAyNjQsImV4cCI6MjA5NjQwNjI2NH0.1zYoUpT3JChq3h3Ko-1SrI8CIOMS2i4I2sKfzaRr7sc';
 const H = { 'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY,'apikey':SB_KEY };
 
+// Batería interna de ejercicios (Google Apps Script, solo lectura desde aquí):
+// mismo catálogo que usa la app de la batería, para enlazar los vídeos ya subidos.
+const BATERIA_API_URL = 'https://script.google.com/macros/s/AKfycbxeInOG4HJyeK9_sDQExPaqik4lSTaeybNih69gA9nmOgPVTC_3Z0HvLfMKPBA8tesSQQ/exec';
+
 async function sbGet(table, params='') {
   const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{headers:H});
   if(!r.ok) throw new Error(await r.text());
@@ -1275,6 +1321,8 @@ let activeDia    = 0;
 let editClientId = null;
 let editCicloId  = null;
 let progFilter   = 'all';
+let bateriaVideos = null;    // Map(nombre normalizado → {nombre,url}), solo los que tienen vídeo; null = aún no cargada
+let bateriaEjercicios = null; // array completo [{nombre,video_url}] de la batería; null = aún no cargada
 
 // ═══════════════════════════════════════════
 // AUTH
@@ -1564,6 +1612,10 @@ function renderTabla() {
   document.getElementById('tabla-empty').classList.add('hide');
   document.getElementById('tabla-content').classList.remove('hide');
 
+  // Vídeos de la batería: se cargan una vez (fire-and-forget) y al llegar se
+  // vuelve a pintar la tabla para que aparezcan los iconos ▶
+  if(bateriaVideos === null) ensureBateriaVideos().then(() => renderTabla());
+
   // Ciclo badge
   const bc = document.getElementById('ciclo-badge-container');
   bc.innerHTML = activeCiclo
@@ -1608,10 +1660,21 @@ function renderTabla() {
       : `${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`;
     row.innerHTML=`<div class="ex-num" style="${numStyle}">${idx+1}</div>
       <div class="ex-info">
-        <div class="ex-name">${ex.nombre}${infoBadge}</div>
+        <div class="ex-name">${ex.nombre}${infoBadge}<span class="ex-video-slot"></span></div>
         <div class="ex-meta">${metaText}</div>
         ${lastHtml}
       </div>`;
+    // Vídeo de la batería (si ya cargó y hay coincidencia por nombre)
+    const video = bateriaVideos && bateriaVideos.get(normalizeExName(ex.nombre));
+    if(video){
+      const vbtn = document.createElement('button');
+      vbtn.className = 'ex-video-btn';
+      vbtn.type = 'button';
+      vbtn.title = 'Ver vídeo de ' + video.nombre;
+      vbtn.textContent = '▶';
+      vbtn.onclick = (e) => { e.stopPropagation(); openVideoModal(video.nombre, video.url); };
+      row.querySelector('.ex-video-slot').appendChild(vbtn);
+    }
     card.appendChild(row);
   });
   cont.appendChild(card);
@@ -2459,13 +2522,15 @@ async function loadCiclosAdmin(clientId){
   });
 }
 
-function openNewCiclo(){
+async function openNewCiclo(){
   editCicloId=null;
   document.getElementById('modal-ciclo-title').textContent='Nuevo Ciclo';
   document.getElementById('ciclo-nombre').value='';
   document.getElementById('ciclo-fecha').value=todayISO();
-  document.getElementById('ciclo-programa').value='';
   document.getElementById('btn-cerrar-ciclo-wrap').classList.add('hide');
+  setCicloJsonView(false);
+  await ensureBateriaCatalogo();
+  renderCicloDiasFromPrograma([{dia:'Día 1', ejercicios:[]}]);
   openModal('modal-ciclo');
 }
 
@@ -2475,19 +2540,19 @@ async function openEditCiclo(cicloId, clientId){
   document.getElementById('modal-ciclo-title').textContent='✏️ '+c.nombre;
   document.getElementById('ciclo-nombre').value=c.nombre;
   document.getElementById('ciclo-fecha').value=c.fecha_inicio;
-  document.getElementById('ciclo-programa').value=JSON.stringify(c.programa||[],null,2);
   const cerrarWrap=document.getElementById('btn-cerrar-ciclo-wrap');
   cerrarWrap.classList.toggle('hide',!c.activo); // solo mostrar si está activo
+  setCicloJsonView(false);
+  await ensureBateriaCatalogo();
+  renderCicloDiasFromPrograma(c.programa && c.programa.length ? c.programa : [{dia:'Día 1', ejercicios:[]}]);
   openModal('modal-ciclo');
 }
 
 async function saveCiclo(){
   const nombre=document.getElementById('ciclo-nombre').value.trim();
   const fecha=document.getElementById('ciclo-fecha').value;
-  const progStr=document.getElementById('ciclo-programa').value.trim();
   if(!nombre||!fecha){ showToast('⚠️ Rellena nombre y fecha'); return; }
-  let programa=[];
-  if(progStr){ try{ programa=JSON.parse(progStr); } catch{ showToast('❌ JSON inválido'); return; } }
+  const programa=buildProgramaFromDOM();
   const btn=document.getElementById('btn-save-ciclo');
   btn.textContent='Guardando...'; btn.disabled=true;
   try {
@@ -2505,6 +2570,133 @@ async function saveCiclo(){
   finally { btn.textContent='Guardar ciclo'; btn.disabled=false; }
 }
 
+// ═══════════════════════════════════════════
+// EDITOR VISUAL DEL PROGRAMA (días + ejercicios con autocompletado
+// contra la batería interna). El DOM es la fuente de verdad mientras
+// el modal está abierto; buildProgramaFromDOM() lo convierte al mismo
+// JSON de siempre para guardarlo en Supabase.
+// ═══════════════════════════════════════════
+
+function renderCicloDiasFromPrograma(programa){
+  const cont=document.getElementById('ciclo-dias-container');
+  cont.innerHTML='';
+  (programa||[]).forEach(dia => addCicloDia(dia));
+}
+
+function addCicloDia(dia){
+  const cont=document.getElementById('ciclo-dias-container');
+  const n=cont.children.length+1;
+  const div=document.createElement('div');
+  div.className='ciclo-dia';
+  div.innerHTML =
+    '<div class="ciclo-dia-head">'
+    + '<input class="form-input ciclo-dia-nombre" value="'+escAttr((dia&&dia.dia)||('Día '+n))+'" placeholder="Nombre del día">'
+    + '<button type="button" class="btn btn-sm btn-danger" style="width:auto" onclick="this.closest(\'.ciclo-dia\').remove()">🗑</button>'
+    + '</div>'
+    + '<div class="ciclo-ejercicios"></div>'
+    + '<button type="button" class="btn btn-sm btn-secondary" style="width:100%" onclick="addCicloEjercicioRow(this)">+ Ejercicio</button>';
+  cont.appendChild(div);
+  const ejCont=div.querySelector('.ciclo-ejercicios');
+  ((dia&&dia.ejercicios)||[]).forEach(ex => ejCont.appendChild(buildCicloEjercicioRow(ex)));
+}
+
+function addCicloEjercicioRow(btn){
+  const ejCont=btn.closest('.ciclo-dia').querySelector('.ciclo-ejercicios');
+  ejCont.appendChild(buildCicloEjercicioRow());
+}
+
+function buildCicloEjercicioRow(ex){
+  ex = ex || {};
+  const row=document.createElement('div');
+  row.className='ciclo-ej-row';
+  const isInfo = ex.informativo===true || ex.informativo==='true';
+  row.innerHTML =
+    '<div class="ciclo-ej-nombre-wrap">'
+    + '<input class="form-input ciclo-ej-nombre" value="'+escAttr(ex.nombre||'')+'" placeholder="Nombre del ejercicio (escribe para buscar en la batería)" autocomplete="off">'
+    + '<div class="ciclo-ej-suggestions"></div>'
+    + '</div>'
+    + '<div class="ciclo-ej-nums">'
+    + '<input type="number" min="0" class="form-input ciclo-ej-series" value="'+escAttr(ex.series??'')+'" placeholder="Series">'
+    + '<input type="number" min="0" class="form-input ciclo-ej-repmin" value="'+escAttr(ex.repMin??'')+'" placeholder="Rep. mín">'
+    + '<input type="number" min="0" class="form-input ciclo-ej-repmax" value="'+escAttr(ex.repMax??'')+'" placeholder="Rep. máx">'
+    + '</div>'
+    + '<input class="form-input ciclo-ej-notas" value="'+escAttr(ex.notas||'')+'" placeholder="Notas (opcional)">'
+    + '<div class="ciclo-ej-foot">'
+    + '<label class="ciclo-ej-info-lbl"><input type="checkbox" class="ciclo-ej-informativo"'+(isInfo?' checked':'')+'> Solo informativo</label>'
+    + '<button type="button" class="btn btn-sm btn-danger" style="width:auto" onclick="this.closest(\'.ciclo-ej-row\').remove()">🗑</button>'
+    + '</div>';
+  const input = row.querySelector('.ciclo-ej-nombre');
+  const suggBox = row.querySelector('.ciclo-ej-suggestions');
+  input.addEventListener('input', () => showCicloEjSuggestions(input, suggBox));
+  input.addEventListener('focus', () => showCicloEjSuggestions(input, suggBox));
+  input.addEventListener('blur', () => setTimeout(() => suggBox.classList.remove('show'), 150));
+  return row;
+}
+
+function showCicloEjSuggestions(input, suggBox){
+  const q = normalizeExName(input.value);
+  if(q.length < 2){ suggBox.classList.remove('show'); suggBox.innerHTML=''; return; }
+  const matches = (bateriaEjercicios||[]).filter(ex => normalizeExName(ex.nombre).includes(q)).slice(0,8);
+  if(!matches.length){ suggBox.classList.remove('show'); suggBox.innerHTML=''; return; }
+  suggBox.innerHTML = matches.map(ex =>
+    '<div class="ciclo-ej-suggestion-item" data-nombre="'+escAttr(ex.nombre)+'">'
+    + '<span>'+escHtml(ex.nombre)+'</span>'
+    + (ex.video_url ? '<span class="ciclo-ej-suggestion-video">🎥</span>' : '')
+    + '</div>'
+  ).join('');
+  suggBox.querySelectorAll('.ciclo-ej-suggestion-item').forEach(item => {
+    item.addEventListener('mousedown', (e) => {  // mousedown, antes del blur del input
+      e.preventDefault();
+      input.value = item.dataset.nombre;
+      suggBox.classList.remove('show');
+      suggBox.innerHTML='';
+    });
+  });
+  suggBox.classList.add('show');
+}
+
+function buildProgramaFromDOM(){
+  return [...document.querySelectorAll('#ciclo-dias-container .ciclo-dia')].map(diaEl => {
+    const diaNombre = diaEl.querySelector('.ciclo-dia-nombre').value.trim() || 'Día';
+    const ejercicios = [...diaEl.querySelectorAll('.ciclo-ej-row')].map(row => {
+      const nombre = row.querySelector('.ciclo-ej-nombre').value.trim();
+      const series = parseInt(row.querySelector('.ciclo-ej-series').value, 10) || 0;
+      const repMin = parseInt(row.querySelector('.ciclo-ej-repmin').value, 10) || 0;
+      const repMax = parseInt(row.querySelector('.ciclo-ej-repmax').value, 10) || 0;
+      const notas = row.querySelector('.ciclo-ej-notas').value.trim();
+      const informativo = row.querySelector('.ciclo-ej-informativo').checked;
+      if(!nombre) return null;  // fila vacía, se descarta
+      const obj = {nombre, series, repMin, repMax, notas};
+      if(informativo) obj.informativo = true;
+      return obj;
+    }).filter(Boolean);
+    return {dia: diaNombre, ejercicios};
+  });
+}
+
+function setCicloJsonView(show){
+  document.getElementById('ciclo-json-box').classList.toggle('hide', !show);
+  document.getElementById('ciclo-json-toggle-btn').textContent = show ? 'Ocultar JSON' : 'Ver/editar como JSON';
+  if(show) document.getElementById('ciclo-programa').value = JSON.stringify(buildProgramaFromDOM(), null, 2);
+}
+
+function toggleCicloJsonView(){
+  const showing = !document.getElementById('ciclo-json-box').classList.contains('hide');
+  setCicloJsonView(!showing);
+}
+
+function applyCicloJson(){
+  const progStr = document.getElementById('ciclo-programa').value.trim();
+  let programa;
+  try { programa = progStr ? JSON.parse(progStr) : []; }
+  catch { showToast('❌ JSON inválido'); return; }
+  renderCicloDiasFromPrograma(programa.length ? programa : [{dia:'Día 1', ejercicios:[]}]);
+  showToast('✅ JSON aplicado al programa');
+}
+
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 async function cerrarCiclo(){
   if(!editCicloId) return;
   if(!confirm('¿Cerrar este ciclo? El cliente pasará a "Sin programa activo" hasta que crees uno nuevo.')) return;
@@ -2512,6 +2704,46 @@ async function cerrarCiclo(){
   showToast('✅ Ciclo cerrado');
   closeModal('modal-ciclo');
   await loadCiclosAdmin(editClientId);
+}
+
+// ═══════════════════════════════════════════
+// VÍDEOS DE LA BATERÍA (solo lectura, se cargan una vez por sesión)
+// ═══════════════════════════════════════════
+function normalizeExName(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ');
+}
+
+async function ensureBateriaCatalogo(){
+  if(bateriaEjercicios) return bateriaEjercicios;  // ya cargada (o cargando)
+  bateriaEjercicios = [];  // evita disparar varias cargas a la vez
+  bateriaVideos = new Map();
+  try {
+    const r = await fetch(BATERIA_API_URL + '?action=list');
+    const data = await r.json();
+    bateriaEjercicios = (data.items||[]).map(ex => ({nombre: ex.nombre, video_url: ex.video_url||''}));
+    bateriaEjercicios.forEach(ex => {
+      if(ex.video_url) bateriaVideos.set(normalizeExName(ex.nombre), {nombre: ex.nombre, url: ex.video_url});
+    });
+  } catch(e){
+    console.error('No se pudo cargar la batería de ejercicios', e);
+  }
+  return bateriaEjercicios;
+}
+async function ensureBateriaVideos(){ await ensureBateriaCatalogo(); return bateriaVideos; }
+
+function openVideoModal(nombre, url){
+  document.getElementById('video-modal-title').textContent = '🎥 ' + nombre;
+  document.getElementById('video-modal-body').innerHTML =
+    '<video src="'+url+'" autoplay loop muted playsinline controls></video>';
+  openModal('modal-video');
+}
+
+function closeVideoModal(){
+  const body = document.getElementById('video-modal-body');
+  const v = body.querySelector('video');
+  if(v){ v.pause(); v.removeAttribute('src'); v.load(); }
+  body.innerHTML = '';
+  closeModal('modal-video');
 }
 
 // ═══════════════════════════════════════════
@@ -2554,7 +2786,7 @@ function closeModal(id){
 }
 
 document.querySelectorAll('.modal-overlay').forEach(o=>{
-  o.addEventListener('click',e=>{ if(e.target===o) closeModal(o.id); });
+  o.addEventListener('click',e=>{ if(e.target===o) (o.id==='modal-video' ? closeVideoModal() : closeModal(o.id)); });
 });
 
 let toastT;
