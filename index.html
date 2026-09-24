@@ -2753,8 +2753,16 @@ function closeVideoModal(){
 // HELPERS
 // ═══════════════════════════════════════════
 function getLastEntry(exName){
+  // Coincidencia exacta primero; si no hay, se prueba por nombre normalizado
+  // (mayúsculas/tildes/espacios) para que un cambio de nombre en la tabla no
+  // deje de encontrar la nota/registro de la sesión anterior.
   for(const sess of sessions){
     const e=(sess.entries||[]).find(e=>e.ejercicio===exName);
+    if(e) return{...e,fecha:sess.fecha};
+  }
+  const nExName = normalizeExName(exName);
+  for(const sess of sessions){
+    const e=(sess.entries||[]).find(e=>normalizeExName(e.ejercicio)===nExName);
     if(e) return{...e,fecha:sess.fecha};
   }
   return null;
