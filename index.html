@@ -1695,33 +1695,35 @@ function openNewSession() {
     sel.appendChild(opt);
   });
   document.getElementById('sess-date').value=todayISO();
-  // Check if there's a draft BEFORE rendering, so we can restore the right day
+  // El día que manda es siempre el que está seleccionado en la Tabla (activeDia).
+  renderSessionForm();
+  // Si hay un borrador sin guardar del MISMO día, se recupera. Si es de otro
+  // día (o quedó huérfano tras un guardado anterior), no se usa.
   const raw = localStorage.getItem(getDraftKey());
   if(raw){
     try {
       const draft = JSON.parse(raw);
-      sel.value = draft.diaIdx;
-      document.getElementById('sess-date').value = todayISO();
-      renderSessionForm();
-      draft.entries.forEach((entry,eIdx)=>{
-        (entry.series||[]).forEach((s,sIdx)=>{
-          const rEl = document.getElementById('reps_'+eIdx+'_'+sIdx);
-          const kEl = document.getElementById('kg_'+eIdx+'_'+sIdx);
-          if(rEl && s.reps !== '') rEl.value = s.reps;
-          if(kEl && s.kg !== '')   kEl.value = s.kg;
-        });
-        if(entry.sensacion){
-          const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
-          btns.forEach(btn => {
-            if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+entry.sensacion+"'"))
-              setSens(eIdx, entry.sensacion, btn);
+      if(parseInt(draft.diaIdx) === activeDia){
+        draft.entries.forEach((entry,eIdx)=>{
+          (entry.series||[]).forEach((s,sIdx)=>{
+            const rEl = document.getElementById('reps_'+eIdx+'_'+sIdx);
+            const kEl = document.getElementById('kg_'+eIdx+'_'+sIdx);
+            if(rEl && s.reps !== '') rEl.value = s.reps;
+            if(kEl && s.kg !== '')   kEl.value = s.kg;
           });
-        }
-      });
-      showToast('📝 Borrador recuperado');
-    } catch(e){ localStorage.removeItem(getDraftKey()); renderSessionForm(); }
-  } else {
-    renderSessionForm();
+          if(entry.sensacion){
+            const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
+            btns.forEach(btn => {
+              if(btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'"+entry.sensacion+"'"))
+                setSens(eIdx, entry.sensacion, btn);
+            });
+          }
+        });
+        showToast('📝 Borrador recuperado');
+      } else {
+        localStorage.removeItem(getDraftKey());
+      }
+    } catch(e){ localStorage.removeItem(getDraftKey()); }
   }
   openModal('modal-session');
 }
@@ -1756,7 +1758,7 @@ function renderSessionForm() {
         <div><label class="form-label" style="font-size:10px">Reps</label>
           <input type="number" class="form-input prev-ph" id="reps_${eIdx}_${s}" placeholder="${repsPlaceholder}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
         <div><label class="form-label" style="font-size:10px">Kg</label>
-          <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
+          <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="${s===0?'propagateKg('+eIdx+');':''}saveDraft()"></div>
       </div>`;
     }
     // Get last nota for this exercise
@@ -1801,6 +1803,20 @@ function setSens(eIdx,val,btn){
   document.querySelectorAll(`#sens_${eIdx} .sens-btn`).forEach(b=>{b.className='sens-btn';delete b.dataset.sel;});
   btn.className='sens-btn sel-'+val; btn.dataset.sel=val;
   saveDraft();
+}
+
+// El peso de la 1ª serie se copia a las demás series del mismo ejercicio
+// mientras estén vacías (si el cliente ya escribió algo distinto ahí, no se toca).
+function propagateKg(eIdx){
+  const first = document.getElementById('kg_'+eIdx+'_0');
+  if(!first || first.value === '') return;
+  let s = 1;
+  while(true){
+    const el = document.getElementById('kg_'+eIdx+'_'+s);
+    if(!el) break;
+    if(el.value === '') el.value = first.value;
+    s++;
+  }
 }
 
 // ── DRAFT AUTOSAVE ──
@@ -1859,6 +1875,7 @@ async function saveSession(){
   try {
     const [saved]=await sbPost('sesiones',{cliente_id:currentUser.id,fecha,dia_nombre:dia.dia,entries,ciclo_id:activeCiclo?.id||null});
     sessions.unshift(saved);
+    clearDraft();
     closeModal('modal-session');
     showToast('✅ Sesión guardada');
     renderTabla();
