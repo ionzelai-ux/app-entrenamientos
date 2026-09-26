@@ -1758,7 +1758,7 @@ function renderSessionForm() {
         <div><label class="form-label" style="font-size:10px">Reps</label>
           <input type="number" class="form-input prev-ph" id="reps_${eIdx}_${s}" placeholder="${repsPlaceholder}" min="0" max="99" inputmode="numeric" style="padding:10px 12px;font-size:15px" oninput="saveDraft()"></div>
         <div><label class="form-label" style="font-size:10px">Kg</label>
-          <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="${s===0?'propagateKg('+eIdx+');':''}saveDraft()"></div>
+          <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="${s===0?'propagateKg('+eIdx+');':'this.dataset.autofilled=\'\';'}saveDraft()"></div>
       </div>`;
     }
     // Get last nota for this exercise
@@ -1806,15 +1806,19 @@ function setSens(eIdx,val,btn){
 }
 
 // El peso de la 1ª serie se copia a las demás series del mismo ejercicio
-// mientras estén vacías (si el cliente ya escribió algo distinto ahí, no se toca).
+// mientras el cliente no las haya tocado a mano (sigue copiando aunque la
+// 1ª serie todavía se esté escribiendo, p.ej. al pasar de "2" a "22").
 function propagateKg(eIdx){
   const first = document.getElementById('kg_'+eIdx+'_0');
-  if(!first || first.value === '') return;
+  if(!first) return;
   let s = 1;
   while(true){
     const el = document.getElementById('kg_'+eIdx+'_'+s);
     if(!el) break;
-    if(el.value === '') el.value = first.value;
+    if(el.value === '' || el.dataset.autofilled === '1'){
+      el.value = first.value;
+      el.dataset.autofilled = '1';
+    }
     s++;
   }
 }
