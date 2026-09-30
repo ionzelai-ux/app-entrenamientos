@@ -20,8 +20,11 @@ self.addEventListener('activate', function(e){
 self.addEventListener('fetch', function(e){
   const url = e.request.url;
   
-  // Supabase: network only, no cache
-  if(url.includes('supabase.co')){
+  // Supabase y batería de ejercicios (Apps Script): network only, no cache.
+  // La batería cambia (vídeos, ejercicios nuevos) y su URL de "action=list" es
+  // siempre la misma, así que si entrara por la rama "cache first" de abajo
+  // se quedaría pillada para siempre con la primera respuesta que se guardó.
+  if(url.includes('supabase.co') || url.includes('script.google.com')){
     e.respondWith(fetch(e.request));
     return;
   }
