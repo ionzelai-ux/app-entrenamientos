@@ -2657,7 +2657,12 @@ function buildCicloEjercicioRow(ex){
 function showCicloEjSuggestions(input, suggBox){
   const q = normalizeExName(input.value);
   if(q.length < 2){ suggBox.classList.remove('show'); suggBox.innerHTML=''; return; }
-  const matches = (bateriaEjercicios||[]).filter(ex => normalizeExName(ex.nombre).includes(q)).slice(0,8);
+  // Cada palabra escrita debe aparecer en cualquier parte del nombre (no solo al principio, cualquier orden)
+  const qTokens = q.split(/\s+/).filter(Boolean);
+  const matches = (bateriaEjercicios||[]).filter(ex => {
+    const n = normalizeExName(ex.nombre);
+    return qTokens.every(t => n.includes(t));
+  }).slice(0,8);
   if(!matches.length){ suggBox.classList.remove('show'); suggBox.innerHTML=''; return; }
   suggBox.innerHTML = matches.map(ex =>
     '<div class="ciclo-ej-suggestion-item" data-nombre="'+escAttr(ex.nombre)+'">'
