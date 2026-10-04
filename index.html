@@ -1657,7 +1657,7 @@ function renderTabla() {
     const numStyle = isInfo ? 'background:var(--gl);color:var(--gt)' : '';
     const metaText = isInfo
       ? `${ex.series} series · ${ex.repMin}${ex.repMin!==ex.repMax?'–'+ex.repMax:''} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`
-      : `${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`;
+      : `${ex.series} series · ${ex.repMin}${ex.repMin!==ex.repMax?'–'+ex.repMax:''} reps${ex.notas?' · <em>'+ex.notas+'</em>':''}`;
     row.innerHTML=`<div class="ex-num" style="${numStyle}">${idx+1}</div>
       <div class="ex-info">
         <div class="ex-name">${ex.nombre}${infoBadge}<span class="ex-video-slot"></span></div>
@@ -1765,7 +1765,7 @@ function renderSessionForm() {
     const lastNota = last?.nota || '';
     const block=document.createElement('div'); block.className='sess-ex-block';
     block.innerHTML=`<div class="sess-ex-title">${ex.nombre}</div>
-      <div class="sess-ex-sub">${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · '+ex.notas:''}</div>
+      <div class="sess-ex-sub">${ex.series} series · ${ex.repMin}${ex.repMin!==ex.repMax?'–'+ex.repMax:''} reps${ex.notas?' · '+ex.notas:''}</div>
       ${lastHtml}${setsHtml}
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
         <label class="form-label">Sensación</label>
@@ -2853,24 +2853,28 @@ function getCronoAudio() {
   return cronoAudioCtx;
 }
 
+// Onda cuadrada y volumen alto: se oye mejor con la música y el ruido del gimnasio
+// que la senoidal al 30 % que había antes.
 function beep(freq, dur, vol) {
   var ctx = getCronoAudio();
   if (!ctx) return;
   try {
+    if (ctx.state === 'suspended') ctx.resume();
     var o = ctx.createOscillator();
     var g = ctx.createGain();
+    o.type = 'square';
     o.connect(g); g.connect(ctx.destination);
     o.frequency.value = freq || 880;
-    g.gain.value = vol || 0.3;
+    g.gain.value = vol || 0.9;
     o.start();
     o.stop(ctx.currentTime + (dur || 0.15));
   } catch(e) {}
 }
 
-function beepWork()  { beep(880, 0.12, 0.3); setTimeout(function(){ beep(880, 0.12, 0.3); }, 150); }
-function beepRest()  { beep(440, 0.25, 0.3); }
-function beepEnd()   { beep(660, 0.1, 0.3); setTimeout(function(){ beep(880, 0.1, 0.3); }, 120); setTimeout(function(){ beep(1100, 0.3, 0.3); }, 240); }
-function beepTick()  { beep(660, 0.05, 0.15); }
+function beepWork()  { beep(880, 0.12, 0.9); setTimeout(function(){ beep(880, 0.12, 0.9); }, 150); }
+function beepRest()  { beep(440, 0.25, 0.9); }
+function beepEnd()   { beep(660, 0.1, 0.9); setTimeout(function(){ beep(880, 0.1, 0.9); }, 120); setTimeout(function(){ beep(1100, 0.3, 0.9); }, 240); }
+function beepTick()  { beep(660, 0.05, 0.5); }
 
 function applyPreset(work, rest, rounds, btn) {
   document.getElementById('crono-work').value = work;
@@ -4022,15 +4026,17 @@ function getRestAudio(){
   return restAudioCtx;
 }
 
-function restBeep(freq, dur){
+function restBeep(freq, dur, vol){
   var ctx = getRestAudio();
   if(!ctx) return;
   try{
+    if(ctx.state === 'suspended') ctx.resume();
     var o = ctx.createOscillator();
     var g = ctx.createGain();
+    o.type = 'square';
     o.connect(g); g.connect(ctx.destination);
     o.frequency.value = freq || 880;
-    g.gain.value = 0.3;
+    g.gain.value = vol || 0.9;
     o.start();
     o.stop(ctx.currentTime + (dur || 0.15));
   }catch(e){}
@@ -4044,7 +4050,7 @@ function restBeepEnd(){
   if(navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
 }
 
-function restBeepTick(){ restBeep(660, 0.05); }
+function restBeepTick(){ restBeep(660, 0.05, 0.5); }
 
 // Get default rest seconds from localStorage per user
 function getRestDefault(){
