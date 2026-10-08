@@ -226,6 +226,10 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .status-active{background:var(--green)}
 .status-inactive{background:var(--red)}
 /* ── CICLOS ADMIN ── */
+#ver-entreno-ciclos{padding:4px 0 8px}
+#ver-entreno-ciclos:empty{display:none}
+#ver-entreno-body .card{margin:10px 0}
+#ver-entreno-body .ex-row{cursor:default}
 .ciclo-row{background:var(--gm);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
 .ciclo-row-name{font-weight:600;font-size:13px;color:var(--cream)}
 .ciclo-row-meta{font-size:11px;color:var(--gt);margin-top:2px}
@@ -829,6 +833,25 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <button class="btn btn-primary" onclick="saveEvalActivas()" style="margin-top:10px" id="btn-save-eval-activas">Guardar evaluaciones activas</button>
     </div>
     <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- MODAL: VER ENTRENAMIENTO (admin, solo lectura) -->
+<div class="modal-overlay" id="modal-ver-entreno">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="ver-entreno-title">Entrenamiento</div>
+        <div id="ver-entreno-sub" style="font-size:12px;color:var(--gt);margin-top:3px"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-ver-entreno')">✕</button>
+    </div>
+    <div id="ver-entreno-ciclos" class="day-selector"></div>
+    <div id="ver-entreno-body"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-sm" id="ver-entreno-editar" onclick="verEntrenoEditar()">✏️ Editar este ciclo</button>
+      <button class="btn btn-sm" style="margin-left:auto" onclick="closeModal('modal-ver-entreno')">Cerrar</button>
+    </div>
   </div>
 </div>
 
@@ -2272,6 +2295,7 @@ function renderAdminClientList(clients){
       +   '<button class="cr-icon-btn '+(isPublic?'on':'')+'" data-id="'+c.id+'" onclick="toggleClientPublic('+c.id+',this)" title="'+(isPublic?'Público':'Privado')+'">'
       +     (isPublic?'🌍':'🔒')
       +   '</button>'
+      +   '<button class="cr-icon-btn" style="color:var(--cream);border-color:var(--cream)" onclick="verEntrenamiento('+c.id+')" title="Ver entrenamiento (solo lectura)">👁️</button>'
       +   stateBtn
       +   '<div class="cr-arrow" onclick="openEditClient('+c.id+')">›</div>'
       + '</div>';
@@ -2539,10 +2563,95 @@ async function loadCiclosAdmin(clientId){
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${tag}
+        <button class="btn btn-sm" onclick="verEntrenamiento(${clientId},${c.id})">Ver</button>
         <button class="btn btn-sm" onclick="openEditCiclo(${c.id},${clientId})">Editar</button>
       </div>`;
     ciclosList.appendChild(row);
   });
+}
+
+// ── Visor de entrenamiento (admin, solo lectura) ──
+var verEntreno = { clientId:null, ciclos:[], idx:0 };
+
+async function verEntrenamiento(clientId, cicloId){
+  verEntreno = { clientId:clientId, ciclos:[], idx:0 };
+  var c = (window._adminClients || []).find(function(x){ return x.id === clientId; });
+  document.getElementById('ver-entreno-title').textContent = '👁 ' + (c ? c.nombre : 'Entrenamiento');
+  document.getElementById('ver-entreno-sub').textContent = '';
+  document.getElementById('ver-entreno-ciclos').innerHTML = '';
+  document.getElementById('ver-entreno-body').innerHTML = '<div class="loading" style="padding:24px"><div class="spinner"></div></div>';
+  document.getElementById('ver-entreno-editar').classList.add('hide');
+  openModal('modal-ver-entreno');
+  try {
+    if(!c){
+      var r = await sbGet('clientes', 'id=eq.'+clientId+'&select=nombre');
+      if(r[0]) document.getElementById('ver-entreno-title').textContent = '👁 ' + r[0].nombre;
+    }
+    var ciclos = await sbGet('ciclos', 'cliente_id=eq.'+clientId+'&order=created_at.desc&select=*');
+    verEntreno.ciclos = ciclos;
+    var idx = ciclos.findIndex(function(x){ return cicloId ? x.id === cicloId : x.activo; });
+    verEntreno.idx = idx >= 0 ? idx : 0;
+    renderVerEntreno();
+  } catch(e){
+    console.error('verEntrenamiento', e);
+    document.getElementById('ver-entreno-body').innerHTML = '<div class="empty"><p>No se ha podido cargar el entrenamiento.</p></div>';
+  }
+}
+
+function renderVerEntreno(){
+  var ciclos = verEntreno.ciclos;
+  var body = document.getElementById('ver-entreno-body');
+  var chips = document.getElementById('ver-entreno-ciclos');
+  var sub = document.getElementById('ver-entreno-sub');
+  var editBtn = document.getElementById('ver-entreno-editar');
+  chips.innerHTML = '';
+  if(!ciclos.length){
+    sub.textContent = '';
+    editBtn.classList.add('hide');
+    body.innerHTML = '<div style="color:var(--gt);font-size:14px;padding:18px 4px">Este cliente todavía no tiene ningún ciclo de entrenamiento.</div>';
+    return;
+  }
+  var ciclo = ciclos[verEntreno.idx];
+  if(ciclos.length > 1){
+    ciclos.forEach(function(x, i){
+      var b = document.createElement('button');
+      b.className = 'day-chip' + (i === verEntreno.idx ? ' active' : '');
+      b.textContent = x.nombre + (x.activo ? ' · activo' : ' · cerrado');
+      b.onclick = function(){ verEntreno.idx = i; renderVerEntreno(); };
+      chips.appendChild(b);
+    });
+  }
+  sub.textContent = ciclo.nombre + ' · ' + (ciclo.activo ? 'Activo' : 'Cerrado') + ' · desde ' + formatDateShort(ciclo.fecha_inicio) + (ciclo.fecha_fin ? ' → ' + formatDateShort(ciclo.fecha_fin) : '');
+  editBtn.classList.remove('hide');
+  var prog = ciclo.programa || [];
+  if(!prog.length){
+    body.innerHTML = '<div style="color:var(--gt);font-size:14px;padding:18px 4px">Este ciclo no tiene ejercicios.</div>';
+    return;
+  }
+  body.innerHTML = prog.map(function(d){
+    var exs = d.ejercicios || [];
+    return '<div class="card">'
+      + '<div class="card-head"><h3>'+escHtml(d.dia || 'Día')+'</h3><span class="day-tag">'+exs.length+' ejerc.</span></div>'
+      + exs.map(function(ex, i){
+          var info = ex.informativo === true || ex.informativo === 'true';
+          var reps = (ex.repMin !== ex.repMax && ex.repMax !== undefined && ex.repMax !== '') ? ex.repMin+'–'+ex.repMax : ex.repMin;
+          var meta = ex.series + ' series · ' + reps + ' reps' + (ex.notas ? ' · <em>'+escHtml(ex.notas)+'</em>' : '');
+          return '<div class="ex-row"'+(info?' style="opacity:.7"':'')+'>'
+            + '<div class="ex-num">'+(i+1)+'</div>'
+            + '<div class="ex-info"><div class="ex-name">'+escHtml(ex.nombre || '')
+            + (info ? '<span style="background:rgba(232,160,32,.2);color:var(--yellow);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px;margin-left:6px">ℹ Info</span>' : '')
+            + '</div><div class="ex-meta">'+meta+'</div></div></div>';
+        }).join('')
+      + '</div>';
+  }).join('');
+}
+
+async function verEntrenoEditar(){
+  var ciclo = verEntreno.ciclos[verEntreno.idx];
+  if(!ciclo) return;
+  closeModal('modal-ver-entreno');
+  await openEditClient(verEntreno.clientId);
+  openEditCiclo(ciclo.id, verEntreno.clientId);
 }
 
 async function openNewCiclo(){
