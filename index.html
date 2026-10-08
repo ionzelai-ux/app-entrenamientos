@@ -226,6 +226,23 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .status-active{background:var(--green)}
 .status-inactive{background:var(--red)}
 /* ── CICLOS ADMIN ── */
+.hx-tabs{display:flex;gap:8px;padding:12px 14px 8px}
+.hx-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hx-chip{padding:9px 14px;border-radius:20px;border:2px solid var(--gl);background:none;color:var(--gt);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;cursor:pointer}
+.hx-chip.on{border-color:var(--granate);color:var(--cream);background:rgba(151,39,46,.2)}
+.hx-est{background:var(--gm);border-radius:12px;padding:12px;margin-bottom:10px}
+.hx-est-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.hx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hx-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gt);margin-bottom:4px}
+.hx-in{width:100%;min-width:0;background:var(--gd);border:1.5px solid var(--gl);border-radius:8px;padding:10px 12px;color:var(--cream);font-size:16px;font-family:'Barlow',sans-serif}
+.hx-in:focus{outline:none;border-color:var(--granate)}
+.hx-time{display:flex;align-items:center;gap:6px}
+.hx-del{background:none;border:none;color:var(--gt);cursor:pointer;font-size:15px;padding:2px 6px}
+.hx-pr{font-size:13px;color:var(--cream);padding:3px 0}
+.hx-pr small{color:var(--gt)}
+#hyrox-body details{padding:8px 14px;font-size:12px;color:var(--gt)}
+#hyrox-body summary{cursor:pointer}
+#hyrox-body .hx-hist{padding:4px 0}
 #ver-entreno-ciclos{padding:4px 0 8px}
 #ver-entreno-ciclos:empty{display:none}
 #ver-entreno-body .card{margin:10px 0}
@@ -549,6 +566,24 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     <div id="hist-list"></div>
   </div>
 
+  <!-- HYROX (solo clientes con hyrox_activo) -->
+  <div class="screen" id="screen-hyrox">
+    <div class="header">
+      <div class="header-info">
+        <div class="header-title">Hyrox</div>
+        <div class="header-sub">Mis marcas y entrenamientos</div>
+      </div>
+    </div>
+    <div class="hx-tabs">
+      <button class="day-chip active" id="hx-tab-sesiones" onclick="setHyroxTab('sesiones')">Sesiones</button>
+      <button class="day-chip" id="hx-tab-marcas" onclick="setHyroxTab('marcas')">Marcas</button>
+    </div>
+    <div style="padding:0 14px 8px">
+      <button class="btn btn-primary" onclick="openHyroxSesion()">+ Nueva sesión Hyrox</button>
+    </div>
+    <div id="hyrox-body"></div>
+  </div>
+
   <!-- PROGRESIÓN -->
   <div class="screen" id="screen-prog">
     <div class="header">
@@ -704,6 +739,10 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
       Fund.
     </button>
+    <button class="nav-btn" id="nav-hyrox" style="display:none" onclick="showScreen('hyrox',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Hyrox
+    </button>
         <button class="nav-btn hide" id="nav-admin" onclick="showScreen('admin',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Admin
@@ -831,6 +870,17 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       </div>
       <div id="eval-activas-list"></div>
       <button class="btn btn-primary" onclick="saveEvalActivas()" style="margin-top:10px" id="btn-save-eval-activas">Guardar evaluaciones activas</button>
+    </div>
+    <!-- Hyrox (solo en edición) -->
+    <div id="hyrox-section" class="hide">
+      <div class="sep"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px">Hyrox</div>
+          <div style="font-size:11px;color:var(--gt);margin-top:2px">Activa la sección Hyrox (registro de marcas) para este cliente</div>
+        </div>
+        <input type="checkbox" id="cl-hyrox" onchange="toggleHyroxCliente(this)" style="width:26px;height:26px;accent-color:var(--granate);cursor:pointer;flex-shrink:0">
+      </div>
     </div>
     <div style="height:12px"></div>
   </div>
@@ -1292,6 +1342,41 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
   </div>
 </div>
 
+<!-- MODAL: SESIÓN HYROX -->
+<div class="modal-overlay" id="modal-hyrox">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nueva sesión Hyrox</div>
+      <button class="modal-close" onclick="closeModal('modal-hyrox')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="hx-fecha">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tiempo total</label>
+        <div class="hx-time">
+          <input type="number" inputmode="numeric" min="0" class="hx-in" id="hx-tot-min" placeholder="min">
+          <span>:</span>
+          <input type="number" inputmode="numeric" min="0" max="59" class="hx-in" id="hx-tot-seg" placeholder="seg">
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">¿Qué has hecho hoy? (toca los que hayas hecho)</label>
+      <div class="hx-chips" id="hx-chips"></div>
+    </div>
+    <div id="hx-cards"></div>
+    <div class="form-group">
+      <label class="form-label">Notas (opcional)</label>
+      <input type="text" class="form-input" id="hx-notas" placeholder="Cómo te has sentido, observaciones...">
+    </div>
+    <button class="btn btn-primary" onclick="saveHyroxSesion()" id="btn-save-hyrox">Guardar sesión</button>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
 <!-- MODAL: RANKING -->
 <div class="modal-overlay" id="modal-ranking">
   <div class="modal">
@@ -1588,6 +1673,7 @@ function showScreen(name, btn) {
   if(name==='fund')   renderFund();
   if(name==='crono')  cronoReset();
   if(name==='admin')  renderAdmin();
+  if(name==='hyrox')  renderHyrox();
 }
 
 // ═══════════════════════════════════════════
@@ -2385,6 +2471,7 @@ async function toggleClientActiveFromList(id, btn){
 function openNewClient(){
   editClientId=null;
   document.getElementById('modal-client-title').textContent='Nuevo Cliente';
+  document.getElementById('hyrox-section').classList.add('hide');
   document.getElementById('cl-nombre').value='';
   document.getElementById('cl-usuario').value='';
   document.getElementById('cl-pass').value='';
@@ -2416,6 +2503,8 @@ async function openEditClient(id){
     // Mostrar ciclos
     document.getElementById('ciclos-section').classList.remove('hide');
     document.getElementById('evaluaciones-activas-section').classList.remove('hide');
+    document.getElementById('hyrox-section').classList.remove('hide');
+    document.getElementById('cl-hyrox').checked = c.hyrox_activo === true;
     await loadCiclosAdmin(id);
     renderEvalActivas(c);
     openModal('modal-client');
@@ -2568,6 +2657,261 @@ async function loadCiclosAdmin(clientId){
       </div>`;
     ciclosList.appendChild(row);
   });
+}
+
+// ═══════════════════════════════════════════
+// HYROX (solo clientes con hyrox_activo)
+// ═══════════════════════════════════════════
+var HYROX_ESTACIONES = [
+  {id:'sled_push', nombre:'Empuje de trineo',   ph:{dist:'50'}},
+  {id:'sled_pull', nombre:'Tracción de trineo', ph:{dist:'50'}},
+  {id:'burpees',   nombre:'Burpees',            ph:{dist:'80'}},
+  {id:'lunges',    nombre:'Lunges',             ph:{dist:'100'}},
+  {id:'skierg',    nombre:'SkiErg',             ph:{dist:'1000'}},
+  {id:'remo',      nombre:'Remo',               ph:{dist:'1000'}},
+  {id:'farmer',    nombre:'Farmer walk',        ph:{dist:'200'}},
+  {id:'wallball',  nombre:'Wall ball',          ph:{reps:'100'}}
+];
+var hyroxSesiones = [];
+var hyroxTab = 'sesiones';
+var hyroxError = false;
+var hyroxFormListo = false;
+
+function hxFmtTime(sec){
+  if(sec === null || sec === undefined || sec === '' || isNaN(sec)) return '';
+  sec = Math.round(Number(sec));
+  var h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+  var ss = (s<10?'0':'')+s;
+  return h > 0 ? h+':'+(m<10?'0':'')+m+':'+ss : m+':'+ss;
+}
+function hxNum(id){
+  var v = parseFloat(String(document.getElementById(id).value).replace(',', '.'));
+  return isNaN(v) ? null : v;
+}
+function hxSecs(idMin, idSeg){
+  var m = hxNum(idMin), s = hxNum(idSeg);
+  if(m === null && s === null) return null;
+  return Math.round((m||0)*60 + (s||0));
+}
+function hxEstacion(id){ return HYROX_ESTACIONES.find(function(e){ return e.id === id; }); }
+function hxPartes(en){
+  var p = [];
+  if(en.distancia_m != null) p.push(en.distancia_m + ' m');
+  if(en.peso_kg != null) p.push(en.peso_kg + ' kg');
+  if(en.reps != null) p.push(en.reps + ' reps');
+  if(en.tiempo_seg != null) p.push('⏱ ' + hxFmtTime(en.tiempo_seg));
+  return p;
+}
+
+async function renderHyrox(){
+  document.getElementById('hx-tab-sesiones').classList.toggle('active', hyroxTab === 'sesiones');
+  document.getElementById('hx-tab-marcas').classList.toggle('active', hyroxTab === 'marcas');
+  var body = document.getElementById('hyrox-body');
+  body.innerHTML = '<div class="loading" style="padding:24px"><div class="spinner"></div></div>';
+  await loadHyrox();
+  if(hyroxError){
+    body.innerHTML = '<div class="empty"><div class="empty-icon">🚧</div><h3>Hyrox no disponible todavía</h3><p>No se han podido cargar tus sesiones. Avisa a Jon.</p></div>';
+    return;
+  }
+  if(hyroxTab === 'marcas') renderHyroxMarcas(); else renderHyroxSesiones();
+}
+
+async function loadHyrox(){
+  try {
+    hyroxSesiones = await sbGet('hyrox_sesiones', 'cliente_id=eq.'+currentUser.id+'&order=fecha.desc,created_at.desc&select=*');
+    hyroxError = false;
+  } catch(e){
+    console.error('loadHyrox', e);
+    hyroxError = true;
+  }
+}
+
+function setHyroxTab(t){
+  hyroxTab = t;
+  document.getElementById('hx-tab-sesiones').classList.toggle('active', t === 'sesiones');
+  document.getElementById('hx-tab-marcas').classList.toggle('active', t === 'marcas');
+  if(hyroxError) return;
+  if(t === 'marcas') renderHyroxMarcas(); else renderHyroxSesiones();
+}
+
+function renderHyroxSesiones(){
+  var body = document.getElementById('hyrox-body');
+  if(!hyroxSesiones.length){
+    body.innerHTML = '<div class="empty"><div class="empty-icon">⚡</div><h3>Sin sesiones todavía</h3><p>Pulsa "Nueva sesión Hyrox" para registrar los ejercicios que has hecho y tus marcas.</p></div>';
+    return;
+  }
+  body.innerHTML = hyroxSesiones.map(function(s){
+    var ents = s.entries || [];
+    var tiempo = s.duracion_seg ? '<span class="day-tag">⏱ ' + hxFmtTime(s.duracion_seg) + '</span>' : '';
+    return '<div class="card">'
+      + '<div class="card-head"><h3>' + escHtml(formatDateShort(s.fecha)) + ' · ' + ents.length + ' ejerc.</h3>'
+      + '<div style="display:flex;align-items:center;gap:6px">' + tiempo
+      + '<button class="hx-del" title="Borrar sesión" onclick="deleteHyroxSesion(' + s.id + ')">🗑</button></div></div>'
+      + ents.map(function(en){
+          return '<div class="ex-row"><div class="ex-info"><div class="ex-name">' + escHtml(en.nombre || en.estacion) + '</div>'
+            + '<div class="ex-meta">' + (hxPartes(en).join(' · ') || 'Hecho') + '</div></div></div>';
+        }).join('')
+      + (s.notas ? '<div class="ex-row"><div class="ex-meta"><em>' + escHtml(s.notas) + '</em></div></div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function hxMarcas(){
+  var out = {};
+  HYROX_ESTACIONES.forEach(function(e){ out[e.id] = []; });
+  hyroxSesiones.forEach(function(s){
+    (s.entries || []).forEach(function(en){
+      if(out[en.estacion]) out[en.estacion].push({fecha:s.fecha, d:en.distancia_m, p:en.peso_kg, r:en.reps, t:en.tiempo_seg});
+    });
+  });
+  return out;
+}
+function hxCtx(r){
+  var p = [];
+  if(r.d != null) p.push(r.d + ' m');
+  if(r.p != null) p.push(r.p + ' kg');
+  if(r.r != null) p.push(r.r + ' reps');
+  return p.join(' · ');
+}
+function hxMejor(regs, campo, menor){
+  var best = null;
+  regs.forEach(function(r){
+    var v = r[campo];
+    if(v == null || (campo === 't' && !(v > 0))) return;
+    if(best === null || (menor ? v < best[campo] : v > best[campo])) best = r;
+  });
+  return best;
+}
+
+function renderHyroxMarcas(){
+  var body = document.getElementById('hyrox-body');
+  var marcas = hxMarcas();
+  var html = '';
+  var mejorTotal = null;
+  hyroxSesiones.forEach(function(s){ if(s.duracion_seg > 0 && (mejorTotal === null || s.duracion_seg < mejorTotal.duracion_seg)) mejorTotal = s; });
+  if(mejorTotal){
+    html += '<div class="card"><div class="card-head"><h3>Mejor tiempo de sesión</h3><span class="day-tag">⏱ ' + hxFmtTime(mejorTotal.duracion_seg) + '</span></div>'
+      + '<div class="ex-row"><div class="ex-meta">' + escHtml(formatDateShort(mejorTotal.fecha)) + '</div></div></div>';
+  }
+  HYROX_ESTACIONES.forEach(function(e){
+    var regs = marcas[e.id];
+    var lineas = '';
+    var t = hxMejor(regs, 't', true), p = hxMejor(regs, 'p', false), d = hxMejor(regs, 'd', false), r = hxMejor(regs, 'r', false);
+    if(t) lineas += '<div class="hx-pr">⏱ Mejor tiempo: <strong>' + hxFmtTime(t.t) + '</strong> <small>' + escHtml(hxCtx(t)) + ' · ' + escHtml(formatDateShort(t.fecha)) + '</small></div>';
+    if(p) lineas += '<div class="hx-pr">🏋️ Más peso: <strong>' + p.p + ' kg</strong> <small>' + escHtml(formatDateShort(p.fecha)) + '</small></div>';
+    if(d) lineas += '<div class="hx-pr">📏 Más distancia: <strong>' + d.d + ' m</strong> <small>' + escHtml(formatDateShort(d.fecha)) + '</small></div>';
+    if(r) lineas += '<div class="hx-pr">🔁 Más reps: <strong>' + r.r + '</strong> <small>' + escHtml(formatDateShort(r.fecha)) + '</small></div>';
+    var hist = '';
+    if(regs.length){
+      hist = '<details><summary>Ver historial (' + regs.length + ')</summary><div class="hx-hist">'
+        + regs.slice().sort(function(a, b){ return a.fecha < b.fecha ? 1 : -1; }).map(function(x){
+            var partes = [];
+            if(hxCtx(x)) partes.push(hxCtx(x));
+            if(x.t != null) partes.push('⏱ ' + hxFmtTime(x.t));
+            return '<div>' + escHtml(formatDateShort(x.fecha)) + ' · ' + escHtml(partes.join(' · ') || 'Hecho') + '</div>';
+          }).join('')
+        + '</div></details>';
+    }
+    html += '<div class="card"><div class="card-head"><h3>' + escHtml(e.nombre) + '</h3><span class="day-tag">' + regs.length + ' reg.</span></div>'
+      + '<div style="padding:8px 14px">' + (lineas || '<div class="hx-pr"><small>Sin marcas todavía</small></div>') + '</div>' + hist + '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function buildHyroxForm(){
+  if(hyroxFormListo) return;
+  document.getElementById('hx-chips').innerHTML = HYROX_ESTACIONES.map(function(e){
+    return '<button type="button" class="hx-chip" id="hx-chip-' + e.id + '" onclick="toggleHxEst(\'' + e.id + '\')">' + escHtml(e.nombre) + '</button>';
+  }).join('');
+  document.getElementById('hx-cards').innerHTML = HYROX_ESTACIONES.map(function(e){
+    var id = e.id, ph = e.ph || {};
+    return '<div class="hx-est hide" id="hx-card-' + id + '">'
+      + '<div class="hx-est-title">' + escHtml(e.nombre) + '</div>'
+      + '<div class="hx-grid">'
+      +   '<div><div class="hx-lbl">Distancia (m)</div><input type="number" inputmode="decimal" min="0" class="hx-in" id="hx-' + id + '-dist" placeholder="' + (ph.dist ? 'ej. ' + ph.dist : '') + '"></div>'
+      +   '<div><div class="hx-lbl">Peso (kg)</div><input type="number" inputmode="decimal" min="0" class="hx-in" id="hx-' + id + '-peso"></div>'
+      +   '<div><div class="hx-lbl">Repeticiones</div><input type="number" inputmode="numeric" min="0" class="hx-in" id="hx-' + id + '-reps" placeholder="' + (ph.reps ? 'ej. ' + ph.reps : '') + '"></div>'
+      +   '<div><div class="hx-lbl">Tiempo</div><div class="hx-time"><input type="number" inputmode="numeric" min="0" class="hx-in" id="hx-' + id + '-min" placeholder="min"><span>:</span><input type="number" inputmode="numeric" min="0" max="59" class="hx-in" id="hx-' + id + '-seg" placeholder="seg"></div></div>'
+      + '</div></div>';
+  }).join('');
+  hyroxFormListo = true;
+}
+
+function openHyroxSesion(){
+  buildHyroxForm();
+  document.getElementById('hx-fecha').value = todayISO();
+  document.getElementById('hx-notas').value = '';
+  ['hx-tot-min', 'hx-tot-seg'].forEach(function(i){ document.getElementById(i).value = ''; });
+  HYROX_ESTACIONES.forEach(function(e){
+    document.getElementById('hx-chip-' + e.id).classList.remove('on');
+    document.getElementById('hx-card-' + e.id).classList.add('hide');
+    ['dist', 'peso', 'reps', 'min', 'seg'].forEach(function(c){ document.getElementById('hx-' + e.id + '-' + c).value = ''; });
+  });
+  openModal('modal-hyrox');
+}
+
+function toggleHxEst(id){
+  var on = document.getElementById('hx-chip-' + id).classList.toggle('on');
+  document.getElementById('hx-card-' + id).classList.toggle('hide', !on);
+}
+
+async function saveHyroxSesion(){
+  var entries = [];
+  HYROX_ESTACIONES.forEach(function(e){
+    if(!document.getElementById('hx-chip-' + e.id).classList.contains('on')) return;
+    var en = {estacion:e.id, nombre:e.nombre};
+    var d = hxNum('hx-' + e.id + '-dist'), p = hxNum('hx-' + e.id + '-peso'), r = hxNum('hx-' + e.id + '-reps'), t = hxSecs('hx-' + e.id + '-min', 'hx-' + e.id + '-seg');
+    if(d !== null) en.distancia_m = d;
+    if(p !== null) en.peso_kg = p;
+    if(r !== null) en.reps = Math.round(r);
+    if(t !== null) en.tiempo_seg = t;
+    entries.push(en);
+  });
+  if(!entries.length){ showToast('⚠️ Elige al menos un ejercicio'); return; }
+  var fecha = document.getElementById('hx-fecha').value || todayISO();
+  var btn = document.getElementById('btn-save-hyrox');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+  try {
+    await sbPost('hyrox_sesiones', {
+      cliente_id: currentUser.id,
+      fecha: fecha,
+      duracion_seg: hxSecs('hx-tot-min', 'hx-tot-seg'),
+      notas: document.getElementById('hx-notas').value.trim() || null,
+      entries: entries
+    });
+    closeModal('modal-hyrox');
+    showToast('✅ Sesión Hyrox guardada');
+    await renderHyrox();
+  } catch(e){
+    console.error('saveHyroxSesion', e);
+    showToast('❌ No se pudo guardar la sesión');
+  } finally { btn.textContent = 'Guardar sesión'; btn.disabled = false; }
+}
+
+async function deleteHyroxSesion(id){
+  if(!confirm('¿Borrar esta sesión de Hyrox?')) return;
+  try {
+    await sbDelete('hyrox_sesiones', 'id=eq.' + id + '&cliente_id=eq.' + currentUser.id);
+    showToast('🗑 Sesión borrada');
+    await renderHyrox();
+  } catch(e){
+    console.error('deleteHyroxSesion', e);
+    showToast('❌ No se pudo borrar');
+  }
+}
+
+// Admin: activar/desactivar la sección Hyrox de un cliente
+async function toggleHyroxCliente(cb){
+  var activar = cb.checked;
+  try {
+    await sbPatch('clientes', 'id=eq.' + editClientId, {hyrox_activo: activar});
+    showToast(activar ? '✅ Hyrox activado para este cliente' : 'Hyrox desactivado');
+    if(currentUser && currentUser.id === editClientId){ currentUser.hyrox_activo = activar; applyClientTypeNav(); }
+  } catch(e){
+    console.error('toggleHyroxCliente', e);
+    cb.checked = !activar;
+    showToast('❌ No se pudo cambiar. ¿Está creada la tabla de Hyrox en Supabase?');
+  }
 }
 
 // ── Visor de entrenamiento (admin, solo lectura) ──
@@ -4340,6 +4684,7 @@ function applyClientTypeNav(){
     var isEval = onclick.indexOf("'eval'") !== -1;
     var isTabla = onclick.indexOf("'tabla'") !== -1;
     var isAdmin = btn.id === 'nav-admin';
+    if(btn.id === 'nav-hyrox'){ btn.style.display = (currentUser.hyrox_activo === true) ? '' : 'none'; return; }
     if(isSimple){
       // Simple: Eval + Fund + Tabla (con mensaje) + Admin (si es admin)
       var show = isFund || isEval || isTabla || (isAdmin && currentUser.es_admin);
