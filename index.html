@@ -226,6 +226,13 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .status-active{background:var(--green)}
 .status-inactive{background:var(--red)}
 /* ── CICLOS ADMIN ── */
+.imp-banner{position:sticky;top:0;z-index:70;height:40px;background:var(--yellow);color:#000;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;font-size:13px}
+.imp-banner-btn{background:#000;color:var(--yellow);border:none;border-radius:6px;padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.impersonando .header{top:40px}
+.cli-card{background:var(--gd);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.cli-card-name{font-weight:700;font-size:16px;color:var(--cream)}
+.cli-card-user{font-size:12px;color:var(--gt);margin-bottom:10px}
+.cli-card-btns{display:flex;gap:8px;flex-wrap:wrap}
 .hx-tabs{display:flex;gap:8px;padding:12px 14px 8px}
 .hx-chips{display:flex;flex-wrap:wrap;gap:8px}
 .hx-chip{padding:9px 14px;border-radius:20px;border:2px solid var(--gl);background:none;color:var(--gt);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;cursor:pointer}
@@ -523,6 +530,12 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 <!-- APP -->
 <div id="app">
 
+  <!-- Aviso: el entrenador está actuando como un cliente -->
+  <div id="impersonar-banner" class="hide imp-banner">
+    <span>🎭 Actuando como <strong id="impersonar-nombre"></strong></span>
+    <button class="imp-banner-btn" onclick="volverAMisClientes()">← Mis clientes</button>
+  </div>
+
   <!-- TABLA -->
   <div class="screen" id="screen-tabla">
     <div class="header">
@@ -564,6 +577,18 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <div class="stat-box"><div class="stat-val" id="stat-streak">0</div><div class="stat-lbl">Racha</div></div>
     </div>
     <div id="hist-list"></div>
+  </div>
+
+  <!-- MIS CLIENTES (solo entrenadores) -->
+  <div class="screen" id="screen-clientes">
+    <div class="header">
+      <div class="header-info">
+        <div class="header-title">Mis clientes</div>
+        <div class="header-sub" id="mis-clientes-sub">Entrenador personal</div>
+      </div>
+      <button class="btn-ghost" onclick="doLogout()">Salir</button>
+    </div>
+    <div id="mis-clientes-list" style="padding:12px 14px"></div>
   </div>
 
   <!-- HYROX (solo clientes con hyrox_activo) -->
@@ -739,6 +764,10 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
       Fund.
     </button>
+    <button class="nav-btn" id="nav-clientes" style="display:none" onclick="showScreen('clientes',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Clientes
+    </button>
     <button class="nav-btn" id="nav-hyrox" style="display:none" onclick="showScreen('hyrox',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Hyrox
@@ -805,6 +834,7 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <button class="modal-close" onclick="closeModal('modal-client')">✕</button>
     </div>
     <!-- Datos básicos -->
+    <div id="ficha-admin-top">
     <div class="form-group">
       <label class="form-label">Nombre real</label>
       <input class="form-input" id="cl-nombre" type="text" placeholder="Ej: Nacho López">
@@ -851,6 +881,8 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     <div style="height:8px"></div>
     <button class="btn btn-danger hide" id="btn-toggle-client" onclick="toggleClientActivo()"></button>
 
+    </div><!-- /ficha-admin-top -->
+
     <!-- Ciclos (solo en edición) -->
     <div id="ciclos-section" class="hide">
       <div class="sep"></div>
@@ -871,6 +903,22 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
       <div id="eval-activas-list"></div>
       <button class="btn btn-primary" onclick="saveEvalActivas()" style="margin-top:10px" id="btn-save-eval-activas">Guardar evaluaciones activas</button>
     </div>
+    <!-- Entrenador personal (solo en edición, solo admin) -->
+    <div id="entrenador-section" class="hide">
+      <div class="sep"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px">Entrenador personal</div>
+          <div style="font-size:11px;color:var(--gt);margin-top:2px">Marca esta cuenta como entrenador (no es un cliente): verá y gestionará a los clientes que le asignes</div>
+        </div>
+        <input type="checkbox" id="cl-es-entrenador" onchange="toggleEsEntrenador(this)" style="width:26px;height:26px;accent-color:var(--granate);cursor:pointer;flex-shrink:0">
+      </div>
+      <div class="form-group" id="cl-entrenador-wrap" style="margin-top:12px">
+        <label class="form-label">Entrenador asignado a este cliente</label>
+        <select class="form-select" id="cl-entrenador" onchange="setEntrenadorCliente(this)"><option value="">Sin entrenador asignado</option></select>
+      </div>
+    </div>
+
     <!-- Hyrox (solo en edición) -->
     <div id="hyrox-section" class="hide">
       <div class="sep"></div>
@@ -1634,6 +1682,7 @@ async function initApp() {
   if(currentUser.es_admin) document.getElementById('nav-admin').classList.remove('hide');
   await Promise.all([loadActiveCiclo(), loadSessions(), loadEvaluaciones(), loadFundamentales(), loadRetos()]);
   applyClientTypeNav();
+  if(currentUser.es_entrenador === true){ showScreen('clientes', document.getElementById('nav-clientes')); return; }
   // Eval es ahora la primera pestaña - todos empiezan ahí
   var evalBtn = document.querySelector('.nav-btn[onclick*="\'eval\'"]');
   if(evalBtn){ renderEval(); showScreen('eval', evalBtn); }
@@ -1650,6 +1699,9 @@ async function loadSessions() {
 }
 
 async function doLogout() {
+  trainerOriginal = null;
+  document.body.classList.remove('impersonando');
+  document.getElementById('impersonar-banner').classList.add('hide');
   currentUser=null; activeCiclo=null; sessions=[];
   localStorage.removeItem('codek_uid');
   document.getElementById('app').style.display='none';
@@ -1674,6 +1726,7 @@ function showScreen(name, btn) {
   if(name==='crono')  cronoReset();
   if(name==='admin')  renderAdmin();
   if(name==='hyrox')  renderHyrox();
+  if(name==='clientes') renderMisClientes();
 }
 
 // ═══════════════════════════════════════════
@@ -2472,6 +2525,8 @@ function openNewClient(){
   editClientId=null;
   document.getElementById('modal-client-title').textContent='Nuevo Cliente';
   document.getElementById('hyrox-section').classList.add('hide');
+  document.getElementById('entrenador-section').classList.add('hide');
+  document.getElementById('ficha-admin-top').style.display = '';
   document.getElementById('cl-nombre').value='';
   document.getElementById('cl-usuario').value='';
   document.getElementById('cl-pass').value='';
@@ -2485,7 +2540,7 @@ function openNewClient(){
   openModal('modal-client');
 }
 
-async function openEditClient(id){
+async function openEditClient(id, soloEntrenador){
   try {
     const [c]=await sbGet('clientes',`id=eq.${id}&select=*`);
     editClientId=id;
@@ -2505,6 +2560,11 @@ async function openEditClient(id){
     document.getElementById('evaluaciones-activas-section').classList.remove('hide');
     document.getElementById('hyrox-section').classList.remove('hide');
     document.getElementById('cl-hyrox').checked = c.hyrox_activo === true;
+    document.getElementById('entrenador-section').classList.remove('hide');
+    document.getElementById('cl-es-entrenador').checked = c.es_entrenador === true;
+    await cargarEntrenadoresSelect(c);
+    var limitada = soloEntrenador === true;
+    ['ficha-admin-top','evaluaciones-activas-section','hyrox-section','entrenador-section'].forEach(function(i){ document.getElementById(i).style.display = limitada ? 'none' : ''; });
     await loadCiclosAdmin(id);
     renderEvalActivas(c);
     openModal('modal-client');
@@ -2914,6 +2974,120 @@ async function toggleHyroxCliente(cb){
   }
 }
 
+// ═══════════════════════════════════════════
+// ENTRENADOR PERSONAL (es_entrenador): ve y gestiona a sus clientes
+// ═══════════════════════════════════════════
+var trainerOriginal = null;   // si no es null: el entrenador está "actuando como" un cliente
+
+async function renderMisClientes(){
+  var list = document.getElementById('mis-clientes-list');
+  list.innerHTML = '<div class="loading" style="padding:24px"><div class="spinner"></div></div>';
+  try {
+    var clientes = await sbGet('clientes', 'entrenador_id=eq.' + currentUser.id + '&activo=eq.true&order=nombre.asc&select=id,nombre,usuario,tipo');
+    document.getElementById('mis-clientes-sub').textContent = clientes.length + (clientes.length === 1 ? ' cliente' : ' clientes');
+    if(!clientes.length){
+      list.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><h3>Sin clientes asignados</h3><p>Todavía no tienes clientes asignados. Jon te los asignará desde su panel.</p></div>';
+      return;
+    }
+    list.innerHTML = clientes.map(function(c){
+      return '<div class="cli-card">'
+        + '<div class="cli-card-name">' + escHtml(c.nombre) + '</div>'
+        + '<div class="cli-card-user">@' + escHtml(c.usuario) + '</div>'
+        + '<div class="cli-card-btns">'
+        +   '<button class="btn btn-sm" onclick="verEntrenamiento(' + c.id + ')">👁 Ver entrenamiento</button>'
+        +   '<button class="btn btn-sm" onclick="openFichaEntrenador(' + c.id + ')">✏️ Tablas</button>'
+        +   '<button class="btn btn-sm" onclick="actuarComoCliente(' + c.id + ')">📝 Registrar sesión</button>'
+        + '</div></div>';
+    }).join('');
+  } catch(e){
+    console.error('renderMisClientes', e);
+    list.innerHTML = '<div class="empty"><p>No se han podido cargar tus clientes.</p></div>';
+  }
+}
+
+function openFichaEntrenador(id){ return openEditClient(id, true); }
+
+function limpiarDatosDeUsuario(){
+  activeCiclo = null; sessions = []; evaluaciones = []; fundamentalesData = {}; activeDia = 0;
+  if(typeof hyroxSesiones !== 'undefined') hyroxSesiones = [];
+}
+
+async function actuarComoCliente(id){
+  try {
+    var rows = await sbGet('clientes', 'id=eq.' + id + '&select=*');
+    if(!rows.length){ showToast('Cliente no encontrado'); return; }
+    var cliente = rows[0];
+    if(!trainerOriginal) trainerOriginal = currentUser;
+    currentUser = cliente;
+    limpiarDatosDeUsuario();
+    document.body.classList.add('impersonando');
+    document.getElementById('impersonar-nombre').textContent = cliente.nombre;
+    document.getElementById('impersonar-banner').classList.remove('hide');
+    document.getElementById('hdr-name').textContent = cliente.nombre;
+    closeModal('modal-ver-entreno'); closeModal('modal-client');
+    await Promise.all([loadActiveCiclo(), loadSessions(), loadEvaluaciones(), loadFundamentales()]);
+    applyClientTypeNav();
+    showScreen('tabla', document.querySelector('.nav-btn[onclick*="\'tabla\'"]'));
+  } catch(e){
+    console.error('actuarComoCliente', e);
+    showToast('❌ No se pudo abrir al cliente');
+  }
+}
+
+function volverAMisClientes(){
+  if(!trainerOriginal) return;
+  currentUser = trainerOriginal;
+  trainerOriginal = null;
+  limpiarDatosDeUsuario();
+  document.body.classList.remove('impersonando');
+  document.getElementById('impersonar-banner').classList.add('hide');
+  document.getElementById('hdr-name').textContent = currentUser.nombre;
+  applyClientTypeNav();
+  showScreen('clientes', document.getElementById('nav-clientes'));
+}
+
+// Admin: marcar una cuenta como entrenador y asignar entrenador a un cliente
+async function cargarEntrenadoresSelect(c){
+  var sel = document.getElementById('cl-entrenador');
+  var opciones = '<option value="">Sin entrenador asignado</option>';
+  try {
+    var ents = await sbGet('clientes', 'es_entrenador=eq.true&select=id,nombre&order=nombre.asc');
+    ents.forEach(function(e){
+      if(e.id === c.id) return;
+      opciones += '<option value="' + e.id + '">' + escHtml(e.nombre) + '</option>';
+    });
+  } catch(e){ /* columna aún no creada: sin entrenadores */ }
+  sel.innerHTML = opciones;
+  sel.value = c.entrenador_id ? String(c.entrenador_id) : '';
+  document.getElementById('cl-entrenador-wrap').style.display = c.es_entrenador === true ? 'none' : '';
+}
+
+async function toggleEsEntrenador(cb){
+  var activar = cb.checked;
+  try {
+    await sbPatch('clientes', 'id=eq.' + editClientId, {es_entrenador: activar});
+    document.getElementById('cl-entrenador-wrap').style.display = activar ? 'none' : '';
+    showToast(activar ? '✅ Cuenta marcada como entrenador' : 'Ya no es entrenador');
+  } catch(e){
+    console.error('toggleEsEntrenador', e);
+    cb.checked = !activar;
+    showToast('❌ No se pudo cambiar. ¿Está ejecutado el SQL de entrenadores en Supabase?');
+  }
+}
+
+async function setEntrenadorCliente(sel){
+  var antes = sel.dataset.prev || '';
+  try {
+    await sbPatch('clientes', 'id=eq.' + editClientId, {entrenador_id: sel.value ? parseInt(sel.value, 10) : null});
+    sel.dataset.prev = sel.value;
+    showToast(sel.value ? '✅ Entrenador asignado' : 'Entrenador quitado');
+  } catch(e){
+    console.error('setEntrenadorCliente', e);
+    sel.value = antes;
+    showToast('❌ No se pudo asignar. ¿Está ejecutado el SQL de entrenadores en Supabase?');
+  }
+}
+
 // ── Visor de entrenamiento (admin, solo lectura) ──
 var verEntreno = { clientId:null, ciclos:[], idx:0 };
 
@@ -2994,7 +3168,7 @@ async function verEntrenoEditar(){
   var ciclo = verEntreno.ciclos[verEntreno.idx];
   if(!ciclo) return;
   closeModal('modal-ver-entreno');
-  await openEditClient(verEntreno.clientId);
+  await openEditClient(verEntreno.clientId, !(currentUser && currentUser.es_admin));
   openEditCiclo(ciclo.id, verEntreno.clientId);
 }
 
@@ -4674,6 +4848,15 @@ function updateRestDisplay(){
 // Aplica visibilidad del nav según el tipo de cliente
 function applyClientTypeNav(){
   if(!currentUser) return;
+  // Entrenador personal (sin estar actuando como un cliente): solo Clientes y Crono
+  if(currentUser.es_entrenador === true && !trainerOriginal){
+    document.querySelectorAll('.nav .nav-btn').forEach(function(btn){
+      var oc = btn.getAttribute('onclick') || '';
+      var ver = btn.id === 'nav-clientes' || oc.indexOf("'crono'") !== -1 || (btn.id === 'nav-admin' && currentUser.es_admin);
+      btn.style.display = ver ? '' : 'none';
+    });
+    return;
+  }
   var tipo = currentUser.tipo || 'rack';
   var isSimple = (tipo === 'clase' || tipo === 'wellhub');
   var buttons = document.querySelectorAll('.nav .nav-btn');
@@ -4684,6 +4867,7 @@ function applyClientTypeNav(){
     var isEval = onclick.indexOf("'eval'") !== -1;
     var isTabla = onclick.indexOf("'tabla'") !== -1;
     var isAdmin = btn.id === 'nav-admin';
+    if(btn.id === 'nav-clientes'){ btn.style.display = 'none'; return; }
     if(btn.id === 'nav-hyrox'){ btn.style.display = (currentUser.hyrox_activo === true) ? '' : 'none'; return; }
     if(isSimple){
       // Simple: Eval + Fund + Tabla (con mensaje) + Admin (si es admin)
