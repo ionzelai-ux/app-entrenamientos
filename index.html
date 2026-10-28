@@ -2724,7 +2724,7 @@ async function loadCiclosAdmin(clientId){
 // ═══════════════════════════════════════════
 var HYROX_ESTACIONES = [
   {id:'sled_push', nombre:'Empuje de trineo',   ph:{dist:'50'}},
-  {id:'sled_pull', nombre:'Tracción de trineo', ph:{dist:'50'}},
+  {id:'sled_pull', nombre:'Traccion de trineo', ph:{dist:'50'}},
   {id:'burpees',   nombre:'Burpees',            ph:{dist:'80'}},
   {id:'lunges',    nombre:'Lunges',             ph:{dist:'100'}},
   {id:'skierg',    nombre:'SkiErg',             ph:{dist:'1000'}},
@@ -3310,11 +3310,17 @@ function showCicloEjSuggestions(input, suggBox){
   suggBox.classList.add('show');
 }
 
+// Nunca tildes en los nombres de ejercicio (si no, luego no salen al buscar sin tilde). La ñ se conserva: es una letra.
+function nombreSinTildes(s){
+  var m = {'á':'a','é':'e','í':'i','ó':'o','ú':'u','ü':'u','Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ü':'U','à':'a','è':'e','ì':'i','ò':'o','ù':'u'};
+  return String(s).replace(/[áéíóúüÁÉÍÓÚÜàèìòù]/g, function(c){ return m[c]; });
+}
+
 function buildProgramaFromDOM(){
   return [...document.querySelectorAll('#ciclo-dias-container .ciclo-dia')].map(diaEl => {
     const diaNombre = diaEl.querySelector('.ciclo-dia-nombre').value.trim() || 'Día';
     const ejercicios = [...diaEl.querySelectorAll('.ciclo-ej-row')].map(row => {
-      const nombre = row.querySelector('.ciclo-ej-nombre').value.trim();
+      const nombre = nombreSinTildes(row.querySelector('.ciclo-ej-nombre').value.trim());
       const series = parseInt(row.querySelector('.ciclo-ej-series').value, 10) || 0;
       const repMin = parseInt(row.querySelector('.ciclo-ej-repmin').value, 10) || 0;
       const repMax = parseInt(row.querySelector('.ciclo-ej-repmax').value, 10) || 0;
