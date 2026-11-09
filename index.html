@@ -95,6 +95,15 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
 .ciclo-json-wrap{margin-top:10px}
 .ciclo-json-toggle{background:none;border:none;color:var(--gt);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px 0}
 .ex-last{font-size:12px;color:var(--gt);margin-top:3px}
+.notas-chip{margin-top:6px;background:rgba(151,39,46,.15);border:1px solid rgba(151,39,46,.4);color:var(--cream);font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:inherit}
+.notas-desp{margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid var(--gl);border-radius:8px;padding:8px 12px}
+.notas-desp summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--cream);list-style:revert}
+.notas-lista{margin-top:8px;max-height:220px;overflow-y:auto}
+.nota-item{padding:8px 0;border-top:1px solid var(--gl);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:flex-start}
+.nota-meta{flex:1 1 100%;font-size:11px;color:var(--gt)}
+.nota-meta::first-letter{text-transform:uppercase}
+.nota-txt{flex:1 1 0;min-width:0;font-size:14px;color:var(--cream);white-space:pre-wrap;word-break:break-word}
+.nota-usar{background:rgba(151,39,46,.15);border:1px solid rgba(151,39,46,.4);color:var(--granate);font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit}
 .ex-last strong{color:var(--cream)}
 /* ── CICLO BADGE ── */
 .ciclo-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(151,39,46,.15);border:1px solid rgba(151,39,46,.4);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--granate);margin:10px 14px 0}
@@ -796,6 +805,18 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--cream);
     </div>
     <div id="session-form-body"></div>
     <button class="btn btn-primary" onclick="saveSession()" id="btn-save-sess" style="margin-top:8px">Guardar Sesión</button>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- MODAL: COMENTARIOS DE UN EJERCICIO -->
+<div class="modal-overlay" id="modal-notas-ej">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="notas-ej-title">Comentarios</div>
+      <button class="modal-close" onclick="closeModal('modal-notas-ej')">✕</button>
+    </div>
+    <div id="notas-ej-body"></div>
     <div style="height:12px"></div>
   </div>
 </div>
@@ -1810,8 +1831,10 @@ function renderTabla() {
     if(last && !isInfo){
       const sets=(last.series||[]).filter(s=>s.reps>0);
       const sText=sets.map(s=>`${s.reps}r${s.kg?' @'+s.kg+'kg':''}`).join(' · ');
-      lastHtml=`<div class="ex-last">Última (${formatDateShort(last.fecha)}): <strong>${sText}</strong>${last.nota?' · 📝'+last.nota:''}</div>`;
+      lastHtml=`<div class="ex-last">Última (${formatDateShort(last.fecha)}): <strong>${sText}</strong>${last.nota?' · 📝'+escHtml(last.nota):''}</div>`;
     }
+    const notasEj = isInfo ? [] : getNotasEjercicio(ex.nombre);
+    if(notasEj.length) lastHtml += `<button type="button" class="notas-chip" data-ex="${escAttr(ex.nombre)}" onclick="abrirNotasEj(this.dataset.ex)">💬 ${notasEj.length} comentario${notasEj.length!==1?'s':''}</button>`;
     const row=document.createElement('div'); row.className='ex-row';
     if(isInfo){
       row.style.opacity='0.7';
@@ -1875,6 +1898,8 @@ function openNewSession() {
             if(rEl && s.reps !== '') rEl.value = s.reps;
             if(kEl && s.kg !== '')   kEl.value = s.kg;
           });
+          const nEl = document.getElementById('nota_'+eIdx);
+          if(nEl && entry.nota) nEl.value = entry.nota;
           if(entry.sensacion){
             const btns = document.querySelectorAll('#sens_'+eIdx+' .sens-btn');
             btns.forEach(btn => {
@@ -1892,7 +1917,9 @@ function openNewSession() {
   openModal('modal-session');
 }
 
+let sessNotasCache = [];
 function renderSessionForm() {
+  sessNotasCache = [];
   const diaIdx=parseInt(document.getElementById('sel-dia').value);
   activeDia = diaIdx; // keep activeDia in sync
   const dia=(activeCiclo?.programa||[])[diaIdx];
@@ -1925,11 +1952,17 @@ function renderSessionForm() {
           <input type="number" class="form-input prev-ph" id="kg_${eIdx}_${s}" placeholder="${kgPlaceholder}" min="0" step="0.5" inputmode="decimal" style="padding:10px 12px;font-size:15px" oninput="${s===0?'propagateKg('+eIdx+');':'this.dataset.autofilled=\'\';'}saveDraft()"></div>
       </div>`;
     }
-    // Get last nota for this exercise
-    const lastNota = last?.nota || '';
+    // TODOS los comentarios anteriores de este ejercicio, en un desplegable
+    const notasEj = getNotasEjercicio(ex.nombre);
+    sessNotasCache[eIdx] = notasEj;
+    const notasHtml = notasEj.length
+      ? `<details class="notas-desp"><summary>💬 Comentarios anteriores (${notasEj.length})</summary><div class="notas-lista">`
+        + notasEj.map((nt,i)=>`<div class="nota-item"><div class="nota-meta">${escHtml(formatDateLong(nt.fecha))}${nt.dia?' · '+escHtml(nt.dia):''}</div><div class="nota-txt">${escHtml(nt.nota)}</div><button type="button" class="nota-usar" onclick="usarNota(${eIdx},${i})">Usar</button></div>`).join('')
+        + `</div></details>`
+      : '';
     const block=document.createElement('div'); block.className='sess-ex-block';
     block.innerHTML=`<div class="sess-ex-title">${ex.nombre}</div>
-      <div class="sess-ex-sub">${ex.series} series · ${ex.repMin}${ex.repMin!==ex.repMax?'–'+ex.repMax:''} reps${ex.notas?' · '+ex.notas:''}</div>
+      <div class="sess-ex-sub">${ex.series} series · ${ex.repMin}–${ex.repMax} reps${ex.notas?' · '+ex.notas:''}</div>
       ${lastHtml}${setsHtml}
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
         <label class="form-label">Sensación</label>
@@ -1940,11 +1973,11 @@ function renderSessionForm() {
         </div>
       </div>
       <div class="form-group" style="margin-top:10px;margin-bottom:0">
-        <label class="form-label">Notas / Anotaciones ${lastNota?'<button type="button" onclick="copyLastNota('+eIdx+')" style="background:rgba(151,39,46,.15);border:1px solid rgba(151,39,46,.4);color:var(--granate);font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:6px;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.3px">📋 Copiar anterior</button>':''}</label>
+        <label class="form-label">Comentarios</label>
+        ${notasHtml}
         <textarea class="form-input prev-ph" id="nota_${eIdx}" rows="2"
-          data-last-nota="${(lastNota||'').replace(/"/g,'&quot;')}"
           style="font-size:14px;padding:10px 12px;resize:none"
-          placeholder="${lastNota ? 'Anterior: '+lastNota.replace(/"/g,'&quot;') : 'Tiempo, altura, observaciones...'}"
+          placeholder="Tiempo, altura, observaciones..."
           oninput="saveDraft()"></textarea>
       </div>`;
     body.appendChild(block);
@@ -1952,13 +1985,12 @@ function renderSessionForm() {
 }
 
 
-// Copia la nota anterior al campo de nota actual
-function copyLastNota(eIdx) {
+// Copia un comentario anterior al campo de comentario de hoy (si ya hay texto, lo añade debajo)
+function usarNota(eIdx, i) {
   const el = document.getElementById('nota_' + eIdx);
-  if (!el) return;
-  const last = el.dataset.lastNota || '';
-  if (!last) return;
-  el.value = last;
+  const nt = (sessNotasCache[eIdx] || [])[i];
+  if (!el || !nt) return;
+  el.value = el.value.trim() ? el.value.trim() + '\n' + nt.nota : nt.nota;
   el.focus();
   saveDraft();
 }
@@ -2036,8 +2068,9 @@ async function saveSession(){
     const sensBtn=document.querySelector(`#sens_${eIdx} [data-sel]`);
     const nota=document.getElementById('nota_'+eIdx)?.value?.trim()||'';
     if(series.some(s=>s.reps>0)) entries.push({ejercicio:ex.nombre,series,sensacion:sensBtn?.dataset.sel||'normal',nota});
+    else if(nota) entries.push({ejercicio:ex.nombre,series,sensacion:null,nota,soloComentario:true}); // sin repeticiones, pero el comentario se guarda
   });
-  if(!entries.length){ showToast('⚠️ Rellena al menos un ejercicio'); return; }
+  if(!entries.some(entryTieneSeries)){ showToast('⚠️ Rellena al menos un ejercicio'); return; }
   const btn=document.getElementById('btn-save-sess');
   btn.textContent='Guardando...'; btn.disabled=true;
   try {
@@ -2080,8 +2113,8 @@ function renderHist(){
     arr.forEach(sess=>{
       const d=sess.fecha.split('-')[2];
       const wday=new Date(sess.fecha+'T12:00:00').toLocaleString('es',{weekday:'short'});
-      const exCount=(sess.entries||[]).length;
-      const firstFeel=sess.entries?.[0]?.sensacion||'normal';
+      const exCount=(sess.entries||[]).filter(entryTieneSeries).length;
+      const firstFeel=((sess.entries||[]).find(entryTieneSeries)||{}).sensacion||'normal';
       const feelLabel={facil:'😊 Fácil',normal:'😐 Normal',duro:'😤 Duro'}[firstFeel]||'';
       const row=document.createElement('div'); row.className='sess-item';
       row.onclick=()=>viewSession(sess.id);
@@ -2111,13 +2144,13 @@ function viewSession(sessId){
     html = '<div style="text-align:center;padding:30px;color:var(--gt)"><div style="font-size:36px;margin-bottom:8px">📭</div><div>Esta sesión no tiene ejercicios registrados</div></div>';
   } else {
     entries.forEach(e=>{
-      const sText=(e.series||[]).map((s,i)=>`S${i+1}: ${s.reps} reps${s.kg?' @ '+s.kg+'kg':''}`).join(' · ');
+      const sText=entryTieneSeries(e) ? (e.series||[]).map((s,i)=>`S${i+1}: ${s.reps} reps${s.kg?' @ '+s.kg+'kg':''}`).join(' · ') : 'Sin series registradas';
       const feel={facil:'😊 Fácil',normal:'😐 Normal',duro:'😤 Duro'}[e.sensacion]||'';
       html += '<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gm)">'
-        + '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+e.ejercicio+'</div>'
+        + '<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+escHtml(e.ejercicio)+'</div>'
         + '<div style="font-size:13px;color:var(--gt)">'+sText+'</div>'
         + (feel ? '<span class="feel-badge feel-'+e.sensacion+'">'+feel+'</span>' : '')
-        + (e.nota ? '<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px">📝 '+e.nota+'</div>' : '')
+        + (e.nota ? '<div style="font-size:12px;color:var(--cream);margin-top:6px;background:rgba(255,255,255,.05);border-radius:6px;padding:6px 10px;white-space:pre-wrap;word-break:break-word">📝 '+escHtml(e.nota)+'</div>' : '')
         + '</div>';
     });
   }
@@ -2159,7 +2192,7 @@ function renderProg(){
   allEx.forEach(exName=>{
     const entries=sessions
       .filter(s=>progFilter==='all'||s.dia_nombre===progFilter)
-      .flatMap(s=>(s.entries||[]).filter(e=>e.ejercicio===exName).map(e=>({fecha:s.fecha,...e})))
+      .flatMap(s=>(s.entries||[]).filter(e=>e.ejercicio===exName && entryTieneSeries(e)).map(e=>({fecha:s.fecha,...e})))
       .sort((a,b)=>a.fecha.localeCompare(b.fecha));
     if(!entries.length) return;
 
@@ -3413,20 +3446,49 @@ function closeVideoModal(){
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
+function formatDateLong(d){ if(!d) return'—'; return new Date(d+'T12:00:00').toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+// Una entrada "con series" tiene alguna serie con repeticiones; las que solo llevan comentario no cuentan como entrenamiento
+function entryTieneSeries(e){ return (e.series||[]).some(s=>s.reps>0); }
+
+// Ultima vez que hizo el ejercicio CON series (las entradas de solo comentario no tapan los pesos anteriores)
 function getLastEntry(exName){
   // Coincidencia exacta primero; si no hay, se prueba por nombre normalizado
   // (mayúsculas/tildes/espacios) para que un cambio de nombre en la tabla no
   // deje de encontrar la nota/registro de la sesión anterior.
   for(const sess of sessions){
-    const e=(sess.entries||[]).find(e=>e.ejercicio===exName);
+    const e=(sess.entries||[]).find(e=>e.ejercicio===exName && entryTieneSeries(e));
     if(e) return{...e,fecha:sess.fecha};
   }
   const nExName = normalizeExName(exName);
   for(const sess of sessions){
-    const e=(sess.entries||[]).find(e=>normalizeExName(e.ejercicio)===nExName);
+    const e=(sess.entries||[]).find(e=>normalizeExName(e.ejercicio)===nExName && entryTieneSeries(e));
     if(e) return{...e,fecha:sess.fecha};
   }
   return null;
+}
+
+// TODOS los comentarios que se han escrito en ese ejercicio, el mas reciente primero
+// (mismo criterio de nombre que getLastEntry: exacto o normalizado)
+function getNotasEjercicio(exName){
+  const out=[];
+  const nExName = normalizeExName(exName);
+  sessions.forEach((sess,idx)=>{
+    (sess.entries||[]).forEach(e=>{
+      if(e.ejercicio!==exName && normalizeExName(e.ejercicio)!==nExName) return;
+      const nota=(e.nota||'').trim();
+      if(nota) out.push({fecha:sess.fecha,dia:sess.dia_nombre,nota,idx});
+    });
+  });
+  return out.sort((a,b)=> a.fecha<b.fecha?1 : a.fecha>b.fecha?-1 : a.idx-b.idx);
+}
+
+function abrirNotasEj(exName){
+  const notas=getNotasEjercicio(exName);
+  document.getElementById('notas-ej-title').textContent=exName;
+  document.getElementById('notas-ej-body').innerHTML = notas.length
+    ? notas.map(n=>'<div class="nota-item"><div class="nota-meta">'+escHtml(formatDateLong(n.fecha))+(n.dia?' · '+escHtml(n.dia):'')+'</div><div class="nota-txt">'+escHtml(n.nota)+'</div></div>').join('')
+    : '<div class="empty"><h3>Sin comentarios</h3><p>Todavía no has escrito comentarios en este ejercicio</p></div>';
+  openModal('modal-notas-ej');
 }
 
 function calcStreak(){
